@@ -52,9 +52,14 @@ private[json] object Meta {
     import Reflection._
 
     def makeMapping(path: Option[String], clazz: Class[_], isList: Boolean): Mapping = isList match {
-      case false => Constructor(path, clazz.getDeclaredConstructors()(0), constructorArgs(clazz))
+      case false => Constructor(path, primaryConstructorOf(clazz), constructorArgs(clazz))
       case true if primitive_?(clazz) => ListOfPrimitives(path.get, clazz)
-      case true => ListConstructor(path.get, clazz.getDeclaredConstructors()(0), constructorArgs(clazz))
+      case true => ListConstructor(path.get, primaryConstructorOf(clazz), constructorArgs(clazz))
+    }
+
+    def primaryConstructorOf(clazz: Class[_]) = clazz.getDeclaredConstructors.toList match {
+      case Nil => fail("Can't find primary constructor for class " + clazz)
+      case x :: xs => x
     }
 
     def constructorArgs(clazz: Class[_]) = clazz.getDeclaredFields.filter(!static_?(_)).map { f =>
@@ -76,7 +81,9 @@ private[json] object Meta {
   private[json] def unmangleName(f: Field) = 
     unmangledNames.memoize(f.getName, operators.foldLeft(_)((n, o) => n.replace(o._1, o._2)))
 
-  val operators = Map("$eq" -> "=", "$greater" -> ">", "$less" -> "<", "$plus" -> "+", "$minus" -> "-",
+  private[json] def fail(msg: String) = throw new MappingException(msg)
+
+  private val operators = Map("$eq" -> "=", "$greater" -> ">", "$less" -> "<", "$plus" -> "+", "$minus" -> "-",
                       "$times" -> "*", "$div" -> "/", "$bang" -> "!", "$at" -> "@", "$hash" -> "#",
                       "$percent" -> "%", "$up" -> "^", "$amp" -> "&", "$tilde" -> "~", "$qmark" -> "?",
                       "$bar" -> "|", "$bslash" -> "\\")
@@ -141,4 +148,8 @@ private[json] object Meta {
       case _ => error("not a primitive " + a.asInstanceOf[AnyRef].getClass)
     }
   }
+}
+
+class MappingException(msg: String, cause: Exception) extends Exception(msg, cause) {
+  def this(msg: String) = this(msg, null)
 }

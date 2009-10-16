@@ -17,16 +17,18 @@ object SerializationExamples extends Specification {
     read[Project](ser) mustEqual project
   }
 
-  "Null example" in {
-    val ser = swrite(Nullable(null))
-    read[Nullable](ser) mustEqual Nullable(null)
-  }
-  
   case class Project(name: String, startDate: Date, lang: Option[Language], teams: List[Team])
   case class Language(name: String, version: Double)
   case class Team(role: String, members: List[Employee])
   case class Employee(name: String, experience: Int)
 
+  "Null example" in {
+    val ser = swrite(Nullable(null))
+    read[Nullable](ser) mustEqual Nullable(null)
+  }
+
+  case class Nullable(name: String)
+  
   "Lotto serialization example" in {
     import LottoExample.{Lotto, lotto}
 
@@ -40,5 +42,14 @@ object SerializationExamples extends Specification {
     read[Primitives](ser) mustEqual primitives
   }
 
-  case class Nullable(name: String)
+  "Polymorphic List serialization example" in {
+//    val animals = Animals(Dog("pluto") :: Fish(1.2) :: Dog("devil") :: Nil)
+//    val ser = swrite(animals)
+//    read[Animals](ser) mustEqual animals
+  }
+
+  case class Animals(animals: List[Animal])
+  trait Animal
+  case class Dog(name: String) extends Animal
+  case class Fish(weight: Double) extends Animal
 }

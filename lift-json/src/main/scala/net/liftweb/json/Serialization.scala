@@ -30,7 +30,10 @@ object Serialization {
   import java.io.{StringWriter, Writer}
   import Meta.Reflection._
 
-  val formats = DefaultFormats.lossless
+  val formats = new Formats {
+    val dateFormat = DefaultFormats.lossless.dateFormat
+    val typeInformation = Always
+  }
 
   def write[A <: AnyRef](a: A): String = write(a, new StringWriter).toString
 

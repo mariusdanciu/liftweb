@@ -39,19 +39,26 @@ object Extraction {
       case e: Exception => throw new MappingException("unknown error", e)
     }
 
-  def decompose(a: Any)(implicit formats: Formats): JValue = a.asInstanceOf[AnyRef] match {
-    case null => JNull
-    case x if primitive_?(x.getClass) => primitive2jvalue(x)(formats)
-    case x: List[_] => JArray(x map decompose)
-    case x: Option[_] => decompose(x getOrElse JNothing)
-    case x => 
-      x.getClass.getDeclaredFields.filter(!static_?(_)).toList.map { f => 
-        f.setAccessible(true)
-        JField(unmangleName(f), decompose(f get x))
-      } match {
-        case Nil => JNothing
-        case fields => JObject(fields)
-      }
+  def decompose(a: Any)(implicit formats: Formats): JValue = {
+    def mkObject(clazz: Class[_], fields: List[JField]) = formats.typeInformation match {
+      case Always => JObject(JField("jsonClass", JString(clazz.getName)) :: fields)
+      case Never => JObject(fields)
+    }
+ 
+    a.asInstanceOf[AnyRef] match {
+      case null => JNull
+      case x if primitive_?(x.getClass) => primitive2jvalue(x)(formats)
+      case x: List[_] => JArray(x map decompose)
+      case x: Option[_] => decompose(x getOrElse JNothing)
+      case x => 
+        x.getClass.getDeclaredFields.filter(!static_?(_)).toList.map { f => 
+          f.setAccessible(true)
+          JField(unmangleName(f), decompose(f get x))
+        } match {
+          case Nil => JNothing
+          case fields => mkObject(x.getClass, fields)
+        }
+    }
   }
 
   private def extract0[A](json: JValue, formats: Formats, mf: Manifest[A]): A = {
@@ -116,11 +123,5 @@ object Extraction {
     case JNothing => fail("Did not find value which can be converted into " + targetType.getName)
     case _ => value.values
   }
-
-  private def fail(msg: String) = throw new MappingException(msg)
-}
-
-class MappingException(msg: String, cause: Exception) extends Exception(msg, cause) {
-  def this(msg: String) = this(msg, null)
 }
 

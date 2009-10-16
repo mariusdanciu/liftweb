@@ -20,12 +20,17 @@ import java.util.{Date, TimeZone}
 
 trait Formats {
   val dateFormat: DateFormat
+  val typeInformation: TypeInformation
 }
 
 trait DateFormat {
   def parse(s: String): Option[Date]
   def format(d: Date): String
 }
+
+sealed trait TypeInformation
+object Never extends TypeInformation
+object Always extends TypeInformation
 
 /** Default date format is UTC time.
  */
@@ -48,6 +53,8 @@ trait DefaultFormats extends Formats {
       f
     }
   }
+
+  val typeInformation = Never
 
   protected def dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
 
