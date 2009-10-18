@@ -79,6 +79,9 @@ object Extraction {
         case JObject(JField("jsonClass", JString(t)) :: xs) =>
           val concreteClass = Thread.currentThread.getContextClassLoader.loadClass(t)
           build(JObject(xs), mappingOf(concreteClass), Nil)(0)
+        case JField(_, JObject(JField("jsonClass", JString(t)) :: xs)) =>
+          val concreteClass = Thread.currentThread.getContextClassLoader.loadClass(t)
+          build(JObject(xs), mappingOf(concreteClass), Nil)(0)
         case _ => instantiate(primaryConstructorOf(targetType), args)
       }
     }

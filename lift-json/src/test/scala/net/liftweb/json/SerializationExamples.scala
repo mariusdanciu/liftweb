@@ -8,7 +8,7 @@ class SerializationExamplesTest extends Runner(SerializationExamples) with JUnit
 object SerializationExamples extends Specification {
   import Serialization.{read, write => swrite}
 
-  implicit val formats = Serialization.formats(TypeHints(classOf[Animal] :: /*classOf[Obj[_]] ::*/ Nil))
+  implicit val formats = Serialization.formats(TypeHints(classOf[Animal] :: Nil))
 
   val project = Project("test", new Date, Some(Language("Scala", 2.75)), List(
     Team("QA", List(Employee("John Doe", 5), Employee("Mike", 3))),
@@ -51,9 +51,15 @@ object SerializationExamples extends Specification {
   }
 
   "Parameterized type serialization example" in {
-//    val objs = Objs(Obj(Fish(1.2)) :: Obj(Dog("pluto")) :: Nil)
-//    val ser = swrite(objs)
-//    read[Objs](ser) mustEqual objs
+    val objs = Objs(Obj(Fish(1.2)) :: Obj(Dog("pluto")) :: Nil)
+    val ser = swrite(objs)
+    read[Objs](ser) mustEqual objs
+  }
+
+  "Tuple serialization example" in {
+    val t: (Animal, Animal) = (Fish(1.5), Dog("pluto"))
+    val ser = swrite(t)
+    read[(Animal, Animal)](ser) mustEqual t
   }
 
   case class Animals(animals: List[Animal])
