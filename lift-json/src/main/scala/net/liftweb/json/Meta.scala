@@ -40,8 +40,8 @@ private[json] object Meta {
    */
   sealed abstract class Mapping
   case class Value(path: String, targetType: Class[_]) extends Mapping
-  case class Constructor(path: Option[String], constructor: JConstructor[_], args: List[Mapping]) extends Mapping
-  case class ListConstructor(path: String, constructor: JConstructor[_], args: List[Mapping]) extends Mapping
+  case class Constructor(path: Option[String], targetType: Class[_], args: List[Mapping]) extends Mapping
+  case class ListConstructor(path: String, targetType: Class[_], args: List[Mapping]) extends Mapping
   case class ListOfPrimitives(path: String, elementType: Class[_]) extends Mapping
   case class Optional(mapping: Mapping) extends Mapping
 
@@ -52,14 +52,9 @@ private[json] object Meta {
     import Reflection._
 
     def makeMapping(path: Option[String], clazz: Class[_], isList: Boolean): Mapping = isList match {
-      case false => Constructor(path, primaryConstructorOf(clazz), constructorArgs(clazz))
+      case false => Constructor(path, clazz, constructorArgs(clazz))
       case true if primitive_?(clazz) => ListOfPrimitives(path.get, clazz)
-      case true => ListConstructor(path.get, primaryConstructorOf(clazz), constructorArgs(clazz))
-    }
-
-    def primaryConstructorOf(clazz: Class[_]) = clazz.getDeclaredConstructors.toList match {
-      case Nil => fail("Can't find primary constructor for class " + clazz)
-      case x :: xs => x
+      case true => ListConstructor(path.get, clazz, constructorArgs(clazz))
     }
 
     def constructorArgs(clazz: Class[_]) = clazz.getDeclaredFields.filter(!static_?(_)).map { f =>
@@ -75,6 +70,7 @@ private[json] object Meta {
           Optional(fieldMapping(name, types._1, types._2))
         } else Optional(fieldMapping(name, typeParameter(genericType), null))
       else makeMapping(Some(name), fieldType, false)
+
     mappings.memoize(clazz, makeMapping(None, _, false))
   }
 
@@ -110,9 +106,18 @@ private[json] object Meta {
                                    classOf[java.lang.Byte], classOf[java.lang.Boolean], 
                                    classOf[java.lang.Short], classOf[Date])
 
+    def primaryConstructorOf[A](cl: Class[A]): JConstructor[A] = cl.getDeclaredConstructors.toList match {
+      case Nil => fail("Can't find primary constructor for class " + cl)
+      case x :: xs => x
+    }
+
     def typeParameter(t: Type): Class[_] = {
       val ptype = t.asInstanceOf[ParameterizedType]
-      ptype.getActualTypeArguments()(0).asInstanceOf[Class[_]]
+      ptype.getActualTypeArguments()(0) match {
+        case c: Class[_] => c
+        case p: ParameterizedType => p.getRawType.asInstanceOf[Class[_]]
+        case x => fail("do not know how to get type parameter from " + x)
+      }
     }
 
     def containerTypes(t: Type): (Class[_], Type) = {

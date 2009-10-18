@@ -64,28 +64,43 @@ object Extraction {
   private def extract0[A](json: JValue, formats: Formats, mf: Manifest[A]): A = {
     val mapping = mappingOf(mf.erasure)
 
-    def newInstance(constructor: JConstructor[_], args: List[Any]) = try {
-      constructor.newInstance(args.map(_.asInstanceOf[AnyRef]).toArray: _*)
-    } catch {
-      case e @ (_:IllegalArgumentException | _:InstantiationException) => 
-        fail("Parsed JSON values do not match with class constructor\nargs=" + args.mkString(",") + "\narg types=" + 
-             args.map(arg => if (arg != null) arg.asInstanceOf[AnyRef].getClass.getName else "null").mkString(",")  + 
-             "\nconstructor=" + constructor)
+    def newInstance(targetType: Class[_], args: List[Any], json: JValue) = {
+      def instantiate(constructor: JConstructor[_], args: List[Any]) = 
+        try {
+          constructor.newInstance(args.map(_.asInstanceOf[AnyRef]).toArray: _*)
+        } catch {
+          case e @ (_:IllegalArgumentException | _:InstantiationException) => 
+            fail("Parsed JSON values do not match with class constructor\nargs=" + args.mkString(",") + 
+                 "\narg types=" + args.map(arg => if (arg != null) arg.asInstanceOf[AnyRef].getClass.getName else "null").mkString(",")  + 
+                 "\nconstructor=" + constructor)
+        }
+
+      json match {
+        case JObject(JField("jsonClass", JString(t)) :: _) =>
+          val concreteClass = Thread.currentThread.getContextClassLoader.loadClass(t)
+          // FIXME
+          val njson = json map {
+            case JField("jsonClass", x) => JField("xxx", x)
+            case x => x
+          }
+          build(njson, mappingOf(concreteClass), Nil)(0)
+        case _ => instantiate(primaryConstructorOf(targetType), args)
+      }
     }
 
     def newPrimitive(elementType: Class[_], elem: JValue) = convert(elem, elementType, formats)
 
     def build(root: JValue, mapping: Mapping, argStack: List[Any]): List[Any] = mapping match {
       case Value(path, targetType) => convert(fieldValue(root, path), targetType, formats) :: argStack
-      case Constructor(path, classname, args) => 
+      case Constructor(path, targetType, args) => 
         val newRoot = path match {
           case Some(p) => root \ p
           case None => root
         }
-        newInstance(classname, args.flatMap(build(newRoot, _, argStack))) :: Nil
-      case ListConstructor(path, classname, args) => 
+        newInstance(targetType, args.flatMap(build(newRoot, _, argStack)), newRoot) :: Nil
+      case ListConstructor(path, targetType, args) => 
         val arr = fieldValue(root, path).asInstanceOf[JArray]
-        arr.arr.map(elem => newInstance(classname, args.flatMap(build(elem, _, argStack)))) :: argStack
+        arr.arr.map(elem => newInstance(targetType, args.flatMap(build(elem, _, argStack)), elem)) :: argStack
       case ListOfPrimitives(path, elementType) =>
         val arr = fieldValue(root, path).asInstanceOf[JArray]
         arr.arr.map(elem => newPrimitive(elementType, elem)) :: argStack
