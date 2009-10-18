@@ -76,14 +76,9 @@ object Extraction {
         }
 
       json match {
-        case JObject(JField("jsonClass", JString(t)) :: _) =>
+        case JObject(JField("jsonClass", JString(t)) :: xs) =>
           val concreteClass = Thread.currentThread.getContextClassLoader.loadClass(t)
-          // FIXME
-          val njson = json map {
-            case JField("jsonClass", x) => JField("xxx", x)
-            case x => x
-          }
-          build(njson, mappingOf(concreteClass), Nil)(0)
+          build(JObject(xs), mappingOf(concreteClass), Nil)(0)
         case _ => instantiate(primaryConstructorOf(targetType), args)
       }
     }
