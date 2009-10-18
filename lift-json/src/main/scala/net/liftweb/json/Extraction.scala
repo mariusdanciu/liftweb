@@ -75,13 +75,14 @@ object Extraction {
                  "\nconstructor=" + constructor)
         }
 
+      def instantiateParameterizedType(typeName: String, fields: List[JField]) = {
+        val concreteClass = Thread.currentThread.getContextClassLoader.loadClass(typeName)
+        build(JObject(fields), mappingOf(concreteClass), Nil)(0)
+      }
+
       json match {
-        case JObject(JField("jsonClass", JString(t)) :: xs) =>
-          val concreteClass = Thread.currentThread.getContextClassLoader.loadClass(t)
-          build(JObject(xs), mappingOf(concreteClass), Nil)(0)
-        case JField(_, JObject(JField("jsonClass", JString(t)) :: xs)) =>
-          val concreteClass = Thread.currentThread.getContextClassLoader.loadClass(t)
-          build(JObject(xs), mappingOf(concreteClass), Nil)(0)
+        case JObject(JField("jsonClass", JString(t)) :: xs) => instantiateParameterizedType(t, xs)
+        case JField(_, JObject(JField("jsonClass", JString(t)) :: xs)) => instantiateParameterizedType(t, xs)
         case _ => instantiate(primaryConstructorOf(targetType), args)
       }
     }
