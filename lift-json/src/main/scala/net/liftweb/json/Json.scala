@@ -122,6 +122,8 @@ object JsonAST {
       append(this, other)
     }
 
+    def merge(other: JValue): JValue = error("not implemented")
+
     def extract[A](implicit formats: Formats, mf: scala.reflect.Manifest[A]) = 
       Extraction.extract(this)(formats, mf)
   }
