@@ -40,9 +40,9 @@ object Extraction {
     }
 
   def decompose(a: Any)(implicit formats: Formats): JValue = {
-    def mkObject(clazz: Class[_], fields: List[JField]) = formats.typeInformation match {
-      case Always => JObject(JField("jsonClass", JString(clazz.getName)) :: fields)
-      case Never => JObject(fields)
+    def mkObject(clazz: Class[_], fields: List[JField]) = formats.typeHints.containsHint_?(clazz) match {
+      case true => JObject(JField("jsonClass", JString(formats.typeHints.hint(clazz))) :: fields)
+      case false => JObject(fields)
     }
  
     a.asInstanceOf[AnyRef] match {

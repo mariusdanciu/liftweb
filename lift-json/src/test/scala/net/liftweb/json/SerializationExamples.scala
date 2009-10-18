@@ -8,6 +8,8 @@ class SerializationExamplesTest extends Runner(SerializationExamples) with JUnit
 object SerializationExamples extends Specification {
   import Serialization.{read, write => swrite}
 
+  implicit val formats = Serialization.formats(TypeHints((classOf[Animal], TypeHints.shortName)))
+
   val project = Project("test", new Date, Some(Language("Scala", 2.75)), List(
     Team("QA", List(Employee("John Doe", 5), Employee("Mike", 3))),
     Team("Impl", List(Employee("Mark", 4), Employee("Mary", 5), Employee("Nick Noob", 1)))))

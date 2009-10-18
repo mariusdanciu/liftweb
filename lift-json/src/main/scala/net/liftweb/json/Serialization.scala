@@ -30,15 +30,17 @@ object Serialization {
   import java.io.{StringWriter, Writer}
   import Meta.Reflection._
 
-  val formats = new Formats {
-    val dateFormat = DefaultFormats.lossless.dateFormat
-    val typeInformation = Always
-  }
+  def write[A <: AnyRef](a: A)(implicit formats: Formats): String = 
+    (write(a, new StringWriter)(formats)).toString
 
-  def write[A <: AnyRef](a: A): String = write(a, new StringWriter).toString
-
-  def write[A <: AnyRef, W <: Writer](a: A, out: W): W = 
+  def write[A <: AnyRef, W <: Writer](a: A, out: W)(implicit formats: Formats): W = 
     Printer.compact(render(Extraction.decompose(a)(formats)), out)
 
-  def read[A](json: String)(implicit mf: Manifest[A]): A = parse(json).extract(formats, mf)
+  def read[A](json: String)(implicit formats: Formats, mf: Manifest[A]): A = 
+    parse(json).extract(formats, mf)
+
+  def formats(hints: TypeHints) = new Formats {
+    val dateFormat = DefaultFormats.lossless.dateFormat
+    override val typeHints = hints
+  }
 }
