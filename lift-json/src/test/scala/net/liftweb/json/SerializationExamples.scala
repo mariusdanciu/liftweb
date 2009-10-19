@@ -59,7 +59,7 @@ trait TypeHintExamples extends Specification {
   implicit val formats: Formats
 
   "Polymorphic List serialization example" in {
-    val animals = Animals(Dog("pluto") :: Fish(1.2) :: Dog("devil") :: Nil)
+    val animals = Animals(Dog("pluto") :: Fish(1.2) :: Dog("devil") :: Nil, Dog("pluto"))
     val ser = swrite(animals)
     read[Animals](ser) mustEqual animals
   }
@@ -77,7 +77,7 @@ trait TypeHintExamples extends Specification {
   }
 }
 
-case class Animals(animals: List[Animal])
+case class Animals(animals: List[Animal], pet: Animal)
 trait Animal
 case class Dog(name: String) extends Animal
 case class Fish(weight: Double) extends Animal
