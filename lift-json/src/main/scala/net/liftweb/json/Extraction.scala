@@ -41,7 +41,7 @@ object Extraction {
 
   def decompose(a: Any)(implicit formats: Formats): JValue = {
     def mkObject(clazz: Class[_], fields: List[JField]) = formats.typeHints.containsHint_?(clazz) match {
-      case true => JObject(JField("jsonClass", JString(formats.typeHints.hint(clazz))) :: fields)
+      case true => JObject(JField("jsonClass", JString(formats.typeHints.hintFor(clazz))) :: fields)
       case false => JObject(fields)
     }
  
@@ -75,8 +75,8 @@ object Extraction {
                  "\nconstructor=" + constructor)
         }
 
-      def instantiateParameterizedType(typeName: String, fields: List[JField]) = {
-        val concreteClass = Thread.currentThread.getContextClassLoader.loadClass(typeName)
+      def instantiateParameterizedType(typeHint: String, fields: List[JField]) = {
+        val concreteClass = formats.typeHints.classFor(typeHint) getOrElse fail("Do not know how to deserialize " + typeHint)
         build(JObject(fields), mappingOf(concreteClass), Nil)(0)
       }
 

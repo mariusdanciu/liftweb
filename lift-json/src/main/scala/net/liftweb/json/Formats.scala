@@ -20,7 +20,7 @@ import java.util.{Date, TimeZone}
 
 trait Formats {
   val dateFormat: DateFormat
-  val typeHints: TypeHints = TypeHints(Nil)
+  val typeHints: TypeHints = NoTypeHints
 }
 
 trait DateFormat {
@@ -28,9 +28,25 @@ trait DateFormat {
   def format(d: Date): String
 }
 
-case class TypeHints(hints: List[Class[_]]) {
+trait TypeHints {
+  val hints: List[Class[_]]
+  def hintFor(clazz: Class[_]): String
+
   def containsHint_?(clazz: Class[_]) = hints exists (_ isAssignableFrom clazz)
-  def hint(clazz: Class[_]) = clazz.getName
+  def classFor(hint: String): Option[Class[_]] = hints find (hintFor(_) == hint)
+}
+
+case object NoTypeHints extends TypeHints {
+  val hints = Nil
+  def hintFor(clazz: Class[_]) = error("NoTypeHints does not provide any type hints.")
+}
+
+case class ShortTypeHints(hints: List[Class[_]]) extends TypeHints {
+  def hintFor(clazz: Class[_]) = clazz.getName.substring(clazz.getName.lastIndexOf(".")+1)
+}
+
+case class FullTypeHints(hints: List[Class[_]]) extends TypeHints {
+  def hintFor(clazz: Class[_]) = clazz.getName
 }
 
 /** Default date format is UTC time.
