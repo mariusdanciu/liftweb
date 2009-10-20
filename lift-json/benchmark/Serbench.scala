@@ -1,8 +1,11 @@
-import net.liftweb.json.Serialization._
+import net.liftweb.json._
+import net.liftweb.json.Serialization.{read, write}
 import java.io._
 import java.util.Date
 
 object Serbench extends Benchmark {
+  implicit val formats = Serialization.formats(NoTypeHints)
+
   val project = Project("test", new Date, Some(Language("Scala", 2.75)), List(
     Team("QA", List(Employee("John Doe", 5), Employee("Mike", 3))),
     Team("Impl", List(Employee("Mark", 4), Employee("Mary", 5), Employee("Nick Noob", 1)))))
