@@ -157,7 +157,7 @@ object JsonAST {
   }
   case class JObject(obj: List[JField]) extends JValue {
     type Values = Map[String, Any]
-    def values = Map() ++ obj.map(_.values.asInstanceOf[(String, Any)]) // FIXME compiler fails if cast is removed
+    def values = Map() ++ obj.map(_.values : (String, Any))
   }
   case class JArray(arr: List[JValue]) extends JValue {
     type Values = List[Any]
