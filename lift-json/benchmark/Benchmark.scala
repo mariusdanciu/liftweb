@@ -1,8 +1,8 @@
 trait Benchmark {
   def run(name: String, warmup: Int, count: Int)(f: => Any) = {
-    println("warmup")
+    print("warmup... ")
     repeat(warmup)(f)
-    println("warmup done")
+    println("done")
     val t = time {
       repeat(count)(f)
     }
