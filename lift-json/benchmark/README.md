@@ -40,7 +40,7 @@ Facts:
   Java HotSpot(TM) Server VM (build 11.0-b15, mixed mode)
 * Exec: scala Serbench
 
-Serializing 20 000 instances:
+Serializing 20 000 instances (No type hints):
 
     Java serialization (full)     1948 ms
     lift-json (full)              1981 ms
@@ -49,8 +49,14 @@ Serializing 20 000 instances:
     Java serialization (deser)    1396 ms
     lift-json (deser)	           772 ms
 
+Serializing 20 000 instances (Using type hints, both short and full gives similar results):
+
+    Java serialization (full)     1948 ms
+    lift-json (full)              2832 ms
+
 Summary:
 
 * Total time about same (serialization + deserialization).
 * Java serializes faster.
 * lift-json deserializes faster.
+* Using type hints comes with a performance penalty.
