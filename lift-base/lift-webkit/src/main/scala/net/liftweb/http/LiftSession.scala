@@ -806,7 +806,7 @@ class LiftSession(val _contextPath: String, val uniqueId: String,
                 if (inst.dispatch.isDefinedAt(method)) {
                   val res = inst.dispatch(method)(kids)
 
-                  (if (isForm && !res.isEmpty) SHtml.hidden(() => inst.registerThisSnippet) else NodeSeq.Empty) ++
+                  (if (isForm && !res.isEmpty) <div>{SHtml.hidden(() => inst.registerThisSnippet)}</div> else NodeSeq.Empty) ++
                   res
                 } else reportSnippetError(page, snippetName,
                                           LiftRules.SnippetFailures.StatefulDispatchNotMatched,
