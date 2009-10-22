@@ -64,7 +64,7 @@ object Extraction {
   private def extract0[A](json: JValue, formats: Formats, mf: Manifest[A]): A = {
     val mapping = mappingOf(mf.erasure)
 
-    def newInstance(targetType: Class[_], args: List[Any], json: JValue) = {
+    def newInstance(targetType: Class[_], args: => List[Any], json: JValue) = {
       def instantiate(constructor: JConstructor[_], args: List[Any]) = 
         try {
           constructor.newInstance(args.map(_.asInstanceOf[AnyRef]).toArray: _*)
@@ -75,14 +75,14 @@ object Extraction {
                  "\nconstructor=" + constructor)
         }
 
-      def instantiateParameterizedType(typeHint: String, fields: List[JField]) = {
-        val concreteClass = formats.typeHints.classFor(typeHint) getOrElse fail("Do not know how to deserialize " + typeHint)
+      def instantiateUsingTypeHint(typeHint: String, fields: List[JField]) = {
+        val concreteClass = formats.typeHints.classFor(typeHint) getOrElse fail("Do not know how to deserialize '" + typeHint + "'")
         build(JObject(fields), mappingOf(concreteClass), Nil)(0)
       }
 
       json match {
-        case JObject(JField("jsonClass", JString(t)) :: xs) => instantiateParameterizedType(t, xs)
-        case JField(_, JObject(JField("jsonClass", JString(t)) :: xs)) => instantiateParameterizedType(t, xs)
+        case JObject(JField("jsonClass", JString(t)) :: xs) => instantiateUsingTypeHint(t, xs)
+        case JField(_, JObject(JField("jsonClass", JString(t)) :: xs)) => instantiateUsingTypeHint(t, xs)
         case _ => instantiate(primaryConstructorOf(targetType), args)
       }
     }
