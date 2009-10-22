@@ -1,5 +1,8 @@
 Parsing and formatting utilities for JSON.
 
+Producing JSON
+==============
+
 DSL rules
 ---------
 
@@ -90,8 +93,8 @@ Example produces following pretty printed JSON. Notice that draw-date field is n
       }
     }
 
-Parsing
--------
+Parsing JSON
+============
 
 Any valid json can be parsed into internal AST format.
 
@@ -100,8 +103,8 @@ Any valid json can be parsed into internal AST format.
     res0: net.liftweb.json.JsonAST.JValue = 
           JObject(List(JField(numbers,JArray(List(JInt(1), JInt(2), JInt(3), JInt(4))))))
 
-Queries
--------
+Querying JSON
+=============
 
 Json AST can be queried using XPath like functions. Following REPL session shows the usage of 
 '\\', '\\\\', 'find', 'filter', 'map' and 'values' functions. 
@@ -208,7 +211,7 @@ Please see more examples in src/test/scala/net/liftweb/json/QueryExamples.scala
     res3: List[BigInt] = List(5, 3)
 
 Extracting values
------------------
+=================
 
 Case classes can be used to extract values from parsed JSON. Non-existing values
 can be extracted into scala.Option and strings can be automatically converted into
@@ -260,12 +263,14 @@ solutions for this (see src/test/scala/net/liftweb/json/LottoExample.scala for b
            }
 
 Serialization
--------------
+=============
 
 Case classes can be serialized and deserialized.
 Please see other examples in src/test/scala/net/liftweb/json/SerializationExamples.scala
 
+    scala> import net.liftweb.json._
     scala> import net.liftweb.json.Serialization.{read, write}
+    scala> implicit val formats = Serialization.formats(NoTypeHints)
     scala> val ser = write(Child("Mary", 5, None))
     scala> read[Child](ser)
     res1: Child = Child(Mary,5,None)
@@ -277,14 +282,36 @@ Serialization supports:
 * Lists
 * scala.Option
 * java.util.Date
+* Polymorphic Lists (see below)
 
 It does not support:
 
 * Java serialization (classes marked with @serializable annotation etc.)
-* Maps, Sets, Tuples or other collection types, just Lists and Options for now
+* Maps, Sets or other collection types, just Lists and Options for now
+* Multidimensional Lists
+
+Serializing polymorphic Lists
+-----------------------------
+
+Type hints are required when serializing polymorphic (or heterogeneous) Lists. Serialized JSON objects
+will get an extra field named 'jsonClass'.
+
+    scala> trait Animal
+    scala> case class Dog(name: String) extends Animal
+    scala> case class Fish(weight: Double) extends Animal
+    scala> case class Animals(animals: List[Animal])
+    scala> implicit val formats = Serialization.formats(ShortTypeHints(List(classOf[Dog], classOf[Fish])))
+    scala> val ser = write(Animals(Dog("pluto") :: Fish(1.2) :: Nil))
+    ser: String = {"animals":[{"jsonClass":"Dog","name":"pluto"},{"jsonClass":"Fish","weight":1.2}]}
+
+    scala> read[Animals](ser)
+    res0: Animals = Animals(List(Dog(pluto), Fish(1.2)))
+
+ShortTypeHints outputs short classname for all instances of configured objects. FullTypeHints outputs full
+classname. Other strategies can be implemented by extending TypeHints trait.
 
 XML support
------------
+===========
 
 JSON structure can be converted to XML node and vice versa.
 Please see more examples in src/test/scala/net/liftweb/json/XmlExamples.scala
@@ -335,7 +362,7 @@ Other direction is supported too. Converting JSON to XML:
 
 
 Kudos
------
+=====
 
 * The original idea for DSL syntax was taken from Lift mailing list ([by Marius](http://markmail.org/message/lniven2hn22vhupu)).
 
