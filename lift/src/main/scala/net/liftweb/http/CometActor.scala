@@ -199,7 +199,7 @@ trait CometListenee extends CometActor {
   }
 }
 
-trait LiftCometActor extends TypedActor[Any, Any] with ForwardableActor[Any, Any] {
+trait LiftCometActor extends SimpleActor[Any] with SimplestActor with GenericActor[Any] with SimplestGenericActor with TypedActor[Any, Any] with ForwardableActor[Any, Any] {
   def uniqueId: String
 
   private[http] def callInitCometActor(theSession: LiftSession,

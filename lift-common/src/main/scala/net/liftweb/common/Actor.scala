@@ -50,7 +50,9 @@ trait TypedActor[T, R] extends SimpleActor[T] {
 /**
  * Generic Actor interface. Can send and receive any type of message.
  */
-trait GenericActor[R] extends TypedActor[Any, R]  
+trait GenericActor[R] extends TypedActor[Any, R]
+
+trait SimplestGenericActor extends GenericActor[Any]
 
 trait ForwardableActor[From, To] {
   self: TypedActor[From, To] =>
