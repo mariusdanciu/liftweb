@@ -75,7 +75,7 @@
     <module>lift-openid</module>
     <module>lift-oauth</module>
     <module>lift-paypal</module>
-    <module>lift-jta</module>
+    <!-- <module>lift-jta</module> -->
   </modules>
 
   <!--
