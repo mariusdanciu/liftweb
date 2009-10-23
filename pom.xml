@@ -364,7 +364,7 @@
     <module>lift-persistence</module>
     <module>lift-modules</module>
     <module>lift-archetypes</module>
-    <!-- <module>lift-examples</module> -->
+    <module>lift-examples</module>
 
     <!-- the 'meta' module -->
     <module>lift-core</module>
