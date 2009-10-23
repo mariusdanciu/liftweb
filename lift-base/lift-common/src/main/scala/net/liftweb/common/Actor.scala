@@ -16,13 +16,29 @@
 
 package net.liftweb.common
 
-trait SimpleActor[T] {
+/**
+ * The simple definition of an actor.  Something that
+ * can receive a message of type T.
+ */
+trait SimpleActor[-T] {
+  /**
+   * Send a message to the Actor
+   *
+   * @param param the message to send
+   */
   def !(param: T): Unit
 }
 
+/**
+ * An Actor that can receive a message of any type
+ */
 trait SimplestActor extends SimpleActor[Any]
 
-trait TypedActor[T, R] extends SimpleActor[T] {
+/**
+ * An Actor that can receive messsages of type T and
+ * return responses of type R.
+ */
+trait TypedActor[-T, +R] extends SimpleActor[T] {
   def !?(param: T): R
 
   /**
@@ -48,10 +64,15 @@ trait TypedActor[T, R] extends SimpleActor[T] {
 }
 
 /**
- * Generic Actor interface. Can send and receive any type of message.
+ * Generic Actor interface. Can receive any type of message.
+ * Can return (via !! and !?) messages of type R.
  */
-trait GenericActor[R] extends TypedActor[Any, R]
+trait GenericActor[+R] extends TypedActor[Any, R]
 
+/**
+ * Generic Actor interface. Can receive any type of message.
+ * Can return (via !! and !?) messages of any type.
+ */
 trait SimplestGenericActor extends GenericActor[Any]
 
 trait ForwardableActor[From, To] {
