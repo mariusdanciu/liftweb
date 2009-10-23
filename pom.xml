@@ -363,10 +363,11 @@
     <module>lift-base</module>
     <module>lift-persistence</module>
     <module>lift-modules</module>
-    <!-- the 'meta' module -->
-    <module>lift-core</module>
     <module>lift-archetypes</module>
     <!-- <module>lift-examples</module> -->
+
+    <!-- the 'meta' module -->
+    <module>lift-core</module>
   </modules>
 
   <!--
