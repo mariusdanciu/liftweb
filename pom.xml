@@ -1,30 +1,86 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+<!--
+  ~ Copyright 2006-2009 WorldWide Conferencing, LLC
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
+
+  <!--
+  Shared parent. Define the settings common to all projects at Lift.
+
+  This includes a standard release profile that all projects can use.
+  If the profile is not appropriate for your project, define your own release profile
+  and change the release plugin configuration parameter <arguments> </arguments> to
+  activate your profile instead of the lift-release profile.
+
+  Dependencies and plugins are also pre-configured with standard settings,
+  these may be overridden by individual projects as well.
+  -->
+
+  <!--
+    ~ The Basics
+  -->
   <groupId>net.liftweb</groupId>
   <artifactId>lift</artifactId>
-  <packaging>pom</packaging>
-  <name>Lift</name>
   <version>1.1-SNAPSHOT</version>
-  <url>http://liftweb.net</url>
-  <inceptionYear>2007</inceptionYear>
+  <packaging>pom</packaging>
+
+  <properties>
+    <!-- Common plugin settings -->
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.source>1.5</maven.compiler.source>
+    <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
+    <!-- Necessary until we move to maven-compiler-plugin-2.1 (MCOMPILER-70) -->
+    <maven.compiler.encoding>${project.build.sourceEncoding}</maven.compiler.encoding>
+    <!-- TODO: for lift-build_date.
+         http://maven.apache.org/guides/introduction/introduction-to-the-pom.html#Available_Variables -->
+    <!--<maven.build.timestamp.format/>-->
+
+    <scala.version>2.7.5</scala.version>
+    <slf4j.version>[1.5.6,)</slf4j.version>
+  </properties>
+
+  <!--
+    ~ More Project Information
+  -->
+  <name>Lift Web Framework</name>
   <description>
-Lift is an expressive and elegant framework for writing web applications.
-Lift stresses the importance of security, maintainability, scalability
-and performance while allowing for high levels of developer productivity.
-Lift is a scala web framework.
+    Lift is an expressive and elegant framework for writing web applications.
+    Lift stresses the importance of security, maintainability, scalability
+    and performance while allowing for high levels of developer productivity.
+    Lift is a Scala web framework.
   </description>
-  <organization>
-    <name>Lift Team</name>
-    <url>http://liftweb.net/</url>
-  </organization>
+  <url>http://dev.liftweb.net</url>
+  <inceptionYear>2006</inceptionYear>
   <licenses>
     <license>
-      <name>the Apache License, ASL Version 2.0</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
       <distribution>repo</distribution>
+      <comments>Standard Apache Software License applicable by default</comments>
     </license>
   </licenses>
+  <organization>
+    <name>WorldWide Conferencing, LLC</name>
+    <url>http://www.liftweb.net</url>
+  </organization>
   <developers>
     <developer>
       <id>dpp</id>
@@ -145,94 +201,130 @@ Lift is a scala web framework.
         <role>OSGi expert and Scala enthusiast</role>
       </roles>
     </developer>
+    <developer>
+      <id>indrajitr</id>
+      <name>Indrajit Raychaudhuri</name>
+      <email>irc [at] indrajit [dot] com</email>
+      <timezone>+5.5</timezone>
+    </developer>
   </developers>
 
-  <mailingLists>
-    <mailingList>
-      <name>User and Dev</name>
-      <archive>http://code.google.com/p/liftweb/</archive>
-      <post>http://code.google.com/p/liftweb/</post>
-    </mailingList>
-  </mailingLists>
-  <scm>
-    <connection>scm:git:git://github.com/dpp/liftweb.git</connection>
-    <developerConnection>scm:git:git@github.com:dpp/liftweb.git</developerConnection>
-    <url>http://github.com/dpp/liftweb/tree/master</url>
-  </scm>
+  <!--
+    ~ Environment Settings
+  -->
   <issueManagement>
-    <system>google</system>
-    <url>http://github.com/dpp/liftweb/issues</url>
+    <system>github</system>
+    <url>http://github.com/dpp/liftweb/issues/</url>
   </issueManagement>
   <ciManagement>
     <system>hudson</system>
     <url>http://hudson.scala-tools.org/job/Lift/</url>
+    <notifiers>
+      <!-- TODO: Configure-->
+      <notifier/>
+    </notifiers>
   </ciManagement>
-  <properties>
-    <scala.version>2.7.5</scala.version>
-  </properties>
-  <modules>
-    <module>lift-common</module>
-    <module>lift-json</module>
-    <module>lift-actor</module>
-    <module>lift-util</module>
-    <module>lift</module>
-    <module>lift-wizard</module>
-    <module>lift-osgi</module>
-    <module>lift-widgets</module>
-    <module>lift-mapper</module>
-    <module>lift-machine</module>
-    <module>lift-record</module>
-    <module>lift-textile</module>
-    <module>lift-facebook</module>
-    <module>lift-amqp</module>
-    <module>lift-xmpp</module>
-    <module>lift-openid</module>
-    <module>lift-oauth</module>
-    <module>lift-paypal</module>
-    <module>lift-testkit</module>
-    <module>lift-core</module>
-    <module>lift-jta</module>
-    <module>lift-jpa</module>
-    <module>lift-archetypes</module>
-    <module>examples</module>
-  </modules>
-  <pluginRepositories>
-    <pluginRepository>
-      <id>scala-tools.org</id>
-      <name>Scala Tools Maven2 Repository</name>
-      <url>http://scala-tools.org/repo-releases</url>
-    </pluginRepository>
-  </pluginRepositories>
+  <mailingLists>
+    <mailingList>
+      <name>User and Developer Discussion Group</name>
+      <archive>http://groups.google.com/group/liftweb</archive>
+      <post>liftweb@googlegroups.com</post>
+      <subscribe>liftweb+subscribe@googlegroups.com</subscribe>
+      <unsubscribe>liftweb+unsubscribe@googlegroups.com</unsubscribe>
+    </mailingList>
+    <!--
+    <mailingList>
+      <name>Committer Group</name>
+      <archive>http://groups.google.com/group/lift-committers</archive>
+      <post>lift-committers@googlegroups.com</post>
+      <subscribe>lift-committers+subscribe@googlegroups.com</subscribe>
+      <unsubscribe>lift-committers+unsubscribe@googlegroups.com</unsubscribe>
+    </mailingList>
+    -->
+  </mailingLists>
+  <scm>
+    <connection>scm:git:git://github.com/dpp/liftweb.git</connection>
+    <developerConnection>scm:git:git@github.com:dpp/liftweb.git</developerConnection>
+    <url>http://github.com/dpp/liftweb</url>
+  </scm>
   <repositories>
     <repository>
-      <id>scala-tools.org</id>
-      <name>Scala Tools Maven2 Repository</name>
+      <id>scala-tools.release</id>
+      <name>Scala-Tools Release Repository</name>
       <url>http://scala-tools.org/repo-releases</url>
     </repository>
     <repository>
-      <id>scala-tools.org.snapshots</id>
-      <name>Scala Tools Maven2 Repository</name>
+      <id>scala-tools.snapshot</id>
+      <name>Scala-Tools Snapshot Repository</name>
       <url>http://scala-tools.org/repo-snapshots</url>
-      <snapshots />
     </repository>
   </repositories>
+  <pluginRepositories>
+    <pluginRepository>
+      <id>scala-tools.release</id>
+      <name>Scala-Tools Release Repository</name>
+      <url>http://scala-tools.org/repo-releases</url>
+    </pluginRepository>
+    <pluginRepository>
+      <id>scala-tools.snapshot</id>
+      <name>Scala-Tools Snapshot Repository</name>
+      <url>http://scala-tools.org/repo-snapshots</url>
+    </pluginRepository>
+  </pluginRepositories>
+  <distributionManagement>
+    <repository>
+      <id>scala-tools.dist.release</id>
+      <name>Scala-Tools Release Distribution Repository</name>
+      <url>scp://scala-tools.org/TODO</url>
+    </repository>
+    <snapshotRepository>
+      <id>scala-tools.dist.release</id>
+      <name>Scala-Tools Snapshot Distribution Repository</name>
+      <url>scp://scala-tools.org/TODO</url>
+    </snapshotRepository>
+    <!-- Site omitted, each project must provide their own -->
+    <!--<site />-->
+  </distributionManagement>
+
+  <!--
+    ~ Dependency Settings
+  -->
   <dependencyManagement>
     <dependencies>
       <dependency>
         <groupId>org.scala-lang</groupId>
         <artifactId>scala-library</artifactId>
+        <!--<version>[2.7.5,2.7.6),(2.7.6,2.7.7]</version>-->
         <version>${scala.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>${slf4j.version}</version>
+        <!--<optional>true</optional>-->
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-simple</artifactId>
+        <version>${slf4j.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.mortbay.jetty</groupId>
+        <artifactId>jetty</artifactId>
+        <version>[6.1.6,7.0)</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.scala-tools.testing</groupId>
+        <artifactId>specs</artifactId>
+        <version>[1.4.4,)</version>
+        <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>javax.servlet</groupId>
         <artifactId>servlet-api</artifactId>
         <version>2.5</version>
-        <scope>provided</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.felix</groupId>
-        <artifactId>org.osgi.core</artifactId>
-        <version>1.2.0</version>
         <scope>provided</scope>
       </dependency>
       <dependency>
@@ -259,145 +351,126 @@ Lift is a scala web framework.
         <version>0.2.0</version>
         <scope>provided</scope>
       </dependency>
-      <dependency>
-        <groupId>com.ibm.icu</groupId>
-        <artifactId>icu4j</artifactId>
-        <version>3.4.4</version>
-      </dependency>
     </dependencies>
   </dependencyManagement>
+  <!-- Dependencies omitted, each project must provide their own -->
+  <!--<dependencies />-->
+
+  <!--
+    ~ Modules Setting
+  -->
+  <modules>
+    <module>lift-base</module>
+    <module>lift-persistence</module>
+    <module>lift-modules</module>
+    <module>lift-archetypes</module>
+    <module>lift-examples</module>
+  </modules>
+
+  <!--
+    ~ Build Settings
+  -->
   <build>
-    <sourceDirectory>src/main/scala</sourceDirectory>
-    <testSourceDirectory>src/test/scala</testSourceDirectory>
     <extensions>
       <extension>
         <groupId>org.apache.maven.wagon</groupId>
         <artifactId>wagon-webdav</artifactId>
-        <version>1.0-beta-2</version>
       </extension>
     </extensions>
-    <plugins>
-      <!-- Helps with importing Maven projects into Eclipse correctly -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>2.0.2</version>
-        <configuration>
-          <source>1.5</source>
-          <target>1.5</target>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.scala-tools</groupId>
-        <artifactId>maven-scala-plugin</artifactId>
-        <version>2.10.1</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>compile</goal>
-              <goal>testCompile</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <jvmArgs>
-            <jvmArg>-Xmx1024m</jvmArg>
-          </jvmArgs>
-          <args>
-            <!-- arg>-unchecked</arg -->
-            <arg>-deprecation</arg>
-            <arg>-Xno-varargs-conversion</arg>
-          </args>
-          <scalaVersion>${scala.version}</scalaVersion>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-idea-plugin</artifactId>
-        <configuration>
-          <downloadSources>true</downloadSources>
-        </configuration>
-      </plugin>
-      <!--plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-eclipse-plugin</artifactId>
-        <configuration>
-          <downloadSources>true</downloadSources>
-          <buildcommands>
-            <buildcommand>ch.epfl.lamp.sdt.core.scalabuilder</buildcommand>
-          </buildcommands>
-          <additionalProjectnatures>
-            <projectnature>ch.epfl.lamp.sdt.core.scalanature</projectnature>
-          </additionalProjectnatures>
-          <classpathContainers>
-            <classpathContainer>org.eclipse.jdt.launching.JRE_CONTAINER</classpathContainer>
-            <classpathContainer>ch.epfl.lamp.sdt.launching.SCALA_CONTAINER</classpathContainer>
-          </classpathContainers>
-        </configuration>
-      </plugin-->
-      <plugin>
-        <inherited>true</inherited>
-        <artifactId>maven-source-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>attach-sources</id>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-changes-plugin</artifactId>
-        <version>2.0</version>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <version>2.2</version>
-        <configuration>
-          <archive>
-            <manifestEntries>
-              <lift_version>${pom.version}</lift_version>
-            </manifestEntries>
-          </archive>
-        </configuration>
-      </plugin>
-    </plugins>
     <pluginManagement>
       <plugins>
         <plugin>
-          <groupId>org.apache.felix</groupId>
-          <artifactId>maven-bundle-plugin</artifactId>
-          <version>2.0.0</version>
-          <extensions>true</extensions>
+          <groupId>org.scala-tools</groupId>
+          <artifactId>maven-scala-plugin</artifactId>
+          <version>2.12.2</version>
           <configuration>
-            <instructions>
-              <Bundle-RequiredExecutionEnvironment>J2SE-1.5</Bundle-RequiredExecutionEnvironment>
-              <_versionpolicy>[$(@),$(version;=+;$(@)))</_versionpolicy>
-            </instructions>
+            <jvmArgs>
+              <jvmArg>-Xmx1024m</jvmArg>
+            </jvmArgs>
+            <args>
+              <!-- <arg>-unchecked</arg> -->
+              <arg>-deprecation</arg>
+              <arg>-Xno-varargs-conversion</arg>
+            </args>
           </configuration>
           <executions>
             <execution>
-              <id>create-bundle</id>
-              <phase>package</phase>
+              <id>scala-compile</id>
+              <phase>process-resources</phase>
               <goals>
-                <goal>bundle</goal>
+                <goal>compile</goal>
               </goals>
             </execution>
             <execution>
-              <id>bundle-install</id>
-              <phase>install</phase>
+              <id>scala-testCompile</id>
+              <phase>process-test-resources</phase>
               <goals>
-                <goal>install</goal>
+                <goal>testCompile</goal>
               </goals>
             </execution>
           </executions>
         </plugin>
+        <plugin>
+          <artifactId>maven-jar-plugin</artifactId>
+          <configuration>
+            <archive>
+              <manifest>
+                <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+              </manifest>
+              <manifestEntries>
+                <!-- TODO: Deprecate and use Default Implementation Entries (Implementation-Version) -->
+                <lift_version>${pom.version}</lift_version>
+                <lift_build_date>${maven.build.timestamp}</lift_build_date>
+              </manifestEntries>
+            </archive>
+          </configuration>
+        </plugin>
+        <!-- TODO: maven-source-plugin -->
+        <plugin>
+          <groupId>org.apache.felix</groupId>
+          <artifactId>maven-bundle-plugin</artifactId>
+          <version>2.0.1</version>
+          <!--TODO: Clarify-->
+          <extensions>true</extensions>
+          <configuration>
+            <instructions>
+              <Bundle-RequiredExecutionEnvironment>J2SE-1.5,J2SE-1.6</Bundle-RequiredExecutionEnvironment>
+              <_versionpolicy>[$(@),$(version;=+;$(@)))</_versionpolicy>
+            </instructions>
+          </configuration>
+          <!-- TODO, probably redundant though because the goals are bound to the right phase -->
+          <!--<executions></executions>-->
+        </plugin>
+        <plugin>
+          <artifactId>maven-idea-plugin</artifactId>
+          <configuration>
+            <downloadSources>true</downloadSources>
+          </configuration>
+        </plugin>
+        <plugin>
+          <artifactId>maven-eclipse-plugin</artifactId>
+          <configuration>
+            <downloadSources>true</downloadSources>
+            <additionalProjectnatures>
+              <projectnature>ch.epfl.lamp.sdt.core.scalanature</projectnature>
+            </additionalProjectnatures>
+            <additionalBuildcommands>
+              <buildcommand>ch.epfl.lamp.sdt.core.scalabuilder</buildcommand>
+            </additionalBuildcommands>
+            <classpathContainers>
+              <classpathContainer>ch.epfl.lamp.sdt.launching.SCALA_CONTAINER</classpathContainer>
+              <classpathContainer>org.eclipse.jdt.launching.JRE_CONTAINER</classpathContainer>
+            </classpathContainers>
+          </configuration>
+        </plugin>
       </plugins>
     </pluginManagement>
   </build>
+
+  <!--
+    ~ Reporting Settings
+  -->
   <reporting>
     <plugins>
       <plugin>
@@ -406,22 +479,76 @@ Lift is a scala web framework.
       <plugin>
         <groupId>org.scala-tools</groupId>
         <artifactId>maven-scala-plugin</artifactId>
-        <version>2.9</version>
         <configuration>
+          <charset>${project.build.sourceEncoding}</charset>
+          <vscaladocVersion>1.2-SNAPSHOT</vscaladocVersion>
           <jvmArgs>
             <jvmArg>-Xmx1024m</jvmArg>
-            <jvmArg>-DpackageLinkDefs=file://${basedir}/../vscaladocs-packageLinkDefs.properties</jvmArg>
+            <!--TODO: Set packageLinkDefs -->
+            <!--<jvmArg>-DpackageLinkDefs=</jvmArg>-->
           </jvmArgs>
           <args>
-            <arg>-unchecked</arg></args>
-          <vscaladocVersion>1.2-SNAPSHOT</vscaladocVersion>
-          <scalaVersion>${scala.version}</scalaVersion>
+            <!-- <arg>-unchecked</arg> -->
+          </args>
+          <!--FIXME: see that sxr plugin works -->
+          <!--
+          <compilerPlugins>
+            <compilerPlugin>
+              <groupId>org.scala-tools.sxr</groupId>
+              <artifactId>sxr_${scala.version}</artifactId>
+              <version>0.2.3</version>
+            </compilerPlugin>
+          </compilerPlugins>
+          -->
         </configuration>
       </plugin>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <configuration>
+          <detectLinks>true</detectLinks>
+          <!--TODO: remove custom tags since low probability of having *.java in Lift -->
+          <tags>
+            <tag>
+              <name>.todo</name>
+              <!-- Should be a combination of the letters Xaoptcmf -->
+              <placement>a</placement>
+              <head>TODO:</head>
+            </tag>
+            <tag>
+              <name>.fixme</name>
+              <!-- Should be a combination of the letters Xaoptcmf -->
+              <placement>a</placement>
+              <head>FIXME:</head>
+            </tag>
+          </tags>
+        </configuration>
+        <!--TODO: Update later-->
+        <!--
+        <reportSets>
+          <reportSet>
+            <reports>
+              <report>javadoc</report>
+              &lt;!&ndash;<report>aggregate</report>&ndash;&gt;
+              <report>test-javadoc</report>
+            </reports>
+          </reportSet>
+        </reportSets>
+        -->
+      </plugin>
+      <plugin>
+        <artifactId>maven-jxr-plugin</artifactId>
+        <configuration>
+          <inputEncoding>${project.build.sourceEncoding}</inputEncoding>
+          <outputEncoding>${project.build.sourceEncoding}</outputEncoding>
+        </configuration>
+      </plugin>
+      <plugin>
         <artifactId>maven-changes-plugin</artifactId>
-        <version>2.0-beta-3</version>
+        <configuration>
+          <issueLinkTemplatePerSystem>
+            <github>%URL%/#issue/%ISSUE%</github>
+          </issueLinkTemplatePerSystem>
+        </configuration>
         <reportSets>
           <reportSet>
             <reports>
@@ -429,15 +556,9 @@ Lift is a scala web framework.
             </reports>
           </reportSet>
         </reportSets>
-        <configuration>
-          <!--issueLinkTemplate>%URL%/detail?id=%ISSUE%</issueLinkTemplate-->
-          <xmlPath>${basedir}/src/changes/changes.xml</xmlPath>
-        </configuration>
       </plugin>
       <plugin>
         <artifactId>maven-surefire-report-plugin</artifactId>
-        <configuration>
-          <!--showSuccess>false</showSuccess--></configuration>
         <reportSets>
           <reportSet>
             <reports>
@@ -446,17 +567,20 @@ Lift is a scala web framework.
           </reportSet>
         </reportSets>
       </plugin>
+      <!-- TODO: Configure -->
+      <!--
+      No need for report, probably enabling rat:check build plugin suffices
+      <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+      </plugin>
+      -->
     </plugins>
   </reporting>
-  <distributionManagement>
-    <!--
-    <snapshotRepository>
-      <id>scala-tools.org</id>
-      <url>dav:http://dav.scala-tools.org/repo-snapshots</url>
-      <uniqueVersion>false</uniqueVersion>
-    </snapshotRepository>
-    -->
-  </distributionManagement>
+
+  <!--
+    ~ Profile Settings
+  -->
   <profiles>
     <profile>
       <id>release</id>
@@ -515,4 +639,5 @@ Lift is a scala web framework.
       </distributionManagement>
     </profile>
   </profiles>
+
 </project>
