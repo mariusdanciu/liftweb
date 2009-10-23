@@ -4,8 +4,8 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>net.liftweb.examples</groupId>
-    <artifactId>osgi</artifactId>
+    <groupId>net.liftweb</groupId>
+    <artifactId>examples-osgi</artifactId>
     <version>1.1-SNAPSHOT</version>
   </parent>
 
