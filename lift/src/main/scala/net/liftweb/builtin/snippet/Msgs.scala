@@ -24,8 +24,11 @@ import _root_.net.liftweb.common.{Box, Full, Empty}
 
 
 /**
- * This class is a built in snippet that renders the messages (Errors, Warnings, Notices). Typically it is used in templates
- * as a place holder for any messages set by user that are not associated with an ID.
+ * This built in snippet renders messages (Errors, Warnings, Notices) in a <i>div</i>.
+ * Typically it is used in templates as a place holder for any messages that are <b>not</b> associated with an ID.
+ * Setting the attribute <i>showAll</i> to <i>true</i> will render all messages, with and without an ID.
+ * This will lead to duplicate messages if additionally the <i>Msg</i> built in snippet is used to show
+ * messages associated with an ID.
  *
  * E.g. (child nodes are optional)
  * <pre>
@@ -46,7 +49,8 @@ object Msgs extends DispatchSnippet {
   }
 
   def render(styles: NodeSeq): NodeSeq = {
-    val f = noIdMessages _
+    val f = if (toBoolean(attr("showAll"))) messages _
+            else noIdMessages _
 
     val makeTitle: (String) => String = {text =>
       Log.debug("Msgs: Default " + text + " is not rendered as the default title is now empty string")

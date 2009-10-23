@@ -2021,6 +2021,13 @@ object S extends HasParams {
   def messagesById(id: String)(f: => List[(NodeSeq, Box[String])]): List[NodeSeq] = f filter( _._2 map (_ equals id ) openOr false) map(_._1)
 
   /**
+   *  Returns all messages, associated with any id or not
+   *
+   * @param f - the function that returns the messages
+   */
+  def messages(f: => List[(NodeSeq, Box[String])]): List[NodeSeq] = f map (_._1)
+
+  /**
    *  Returns the messages that are not associated with any id
    *
    * @param f - the function that returns the messages
