@@ -366,7 +366,7 @@
     <!-- the 'meta' module -->
     <module>lift-core</module>
     <module>lift-archetypes</module>
-    <module>lift-examples</module>
+    <!-- <module>lift-examples</module> -->
   </modules>
 
   <!--
