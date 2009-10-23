@@ -4,10 +4,9 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>net.liftweb</groupId>
-    <artifactId>lift</artifactId>
+    <groupId>net.liftweb.examples</groupId>
+    <artifactId>osgi</artifactId>
     <version>1.1-SNAPSHOT</version>
-    <relativePath>../../../pom.xml</relativePath>
   </parent>
 
   <artifactId>examples-osgi-hello</artifactId>
