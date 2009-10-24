@@ -46,4 +46,45 @@ object MergeExamples extends Specification {
       }
       "compiled": true,
     }""")
+
+  "Lotto example" in {
+    (lotto1 merge lotto2) mustEqual expectedLottoResult
+  }
+
+  val lotto1 = parse("""
+    {
+      "lotto":{
+        "lotto-id":5,
+        "winning-numbers":[2,45,34,23,7,5,3]
+        "winners":[{
+          "winner-id":23,
+          "numbers":[2,45,34,23,3,5]
+        }]
+      }
+    }""")
+
+  val lotto2 = parse("""
+    {
+      "lotto":{ 
+        "winners":[{
+          "winner-id":54,
+          "numbers":[52,3,12,11,18,22]
+        }]
+      }
+    }""")
+
+  val expectedLottoResult = parse("""
+    {
+      "lotto":{
+        "lotto-id":5,
+        "winning-numbers":[2,45,34,23,7,5,3],
+        "winners":[{
+          "winner-id":23,
+          "numbers":[2,45,34,23,3,5]
+        },{
+          "winner-id":54,
+          "numbers":[52,3,12,11,18,22]
+        }]
+      }
+    }""")
 }
