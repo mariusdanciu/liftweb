@@ -8,14 +8,19 @@ object MergeExamples extends Specification {
   import JsonAST._
   import JsonParser._
 
+  "Merge example" in {
+    (scala1 merge scala2) mustEqual expectedMergeResult
+  }
+
   val scala1 = parse("""
     {
       "lang": "scala",
+      "year": 2006,
       "tags": ["fp", "oo"],
-      "features": [
-        { "key1":"val1" },
-        { "key2":"val2" }
-      ]
+      "features": {
+        "key1":"val1",
+        "key2":"val2" 
+      }
     }""")
 
   val scala2 = parse("""
@@ -23,13 +28,22 @@ object MergeExamples extends Specification {
       "tags": ["static-typing","fp"],
       "compiled": true,
       "lang": "scala",
-      "features": [
-        { "key2":"newval2" }
-        { "key3":"val3" }
-      ]
+      "features": {
+        "key2":"newval2",
+        "key3":"val3"
+      }
     }""")
 
   val expectedMergeResult = parse("""
     {
+      "lang": "scala",
+      "year": 2006,
+      "tags": ["fp", "oo", "static-typing"],
+      "features": {
+        "key1":"val1",
+        "key2":"newval2",
+        "key3":"val3"
+      }
+      "compiled": true,
     }""")
 }

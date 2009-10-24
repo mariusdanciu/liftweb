@@ -22,7 +22,7 @@ object JsonAST {
 
   def concat(xs: JValue*) = xs.foldLeft(JNothing: JValue)(_ ++ _)  
 
-  sealed abstract class JValue {
+  sealed abstract class JValue extends Merge.Mergeable {
     type Values
 
     def \(nameToFind: String): JValue = {
@@ -121,8 +121,6 @@ object JsonAST {
       }
       append(this, other)
     }
-
-    def merge(other: JValue): JValue = error("not implemented")
 
     def extract[A](implicit formats: Formats, mf: scala.reflect.Manifest[A]) = 
       Extraction.extract(this)(formats, mf)

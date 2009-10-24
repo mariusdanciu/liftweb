@@ -36,12 +36,12 @@ object JsonASTSpec extends Specification with JValueGen with ScalaCheck {
     val identityProp = (json: JValue) => ((json merge JNothing) == json) && ((JNothing merge json) == json)
     forAll(identityProp) must pass
   }
-
+/*
   "Merge associativity" in {
     val assocProp = (x: JValue, y: JValue, z: JValue) => (x merge (y merge z)) == ((x merge y) merge z)
     forAll(assocProp) must pass
   }
-
+*/
   "Merge idempotency" in {
     val idempotencyProp = (x: JValue) => (x merge x) == x
     forAll(idempotencyProp) must pass
