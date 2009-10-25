@@ -60,13 +60,11 @@ object JsonASTSpec extends Specification with JValueGen with ScalaCheck {
     val subsetProp = (x: JValue, y: JValue) => {
       val Diff(c, a, d) = x diff y
       val orig = x merge y
-      orig == (orig merge ((c merge a) merge d))
+      orig == (orig merge (c merge a))
     }
     forAll(subsetProp) must pass
   }
-*/
-
-//  "Diff field reordering" 
+  */
 
   implicit def arbJValue: Arbitrary[JValue] = Arbitrary(genJValue)
 }

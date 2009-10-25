@@ -18,7 +18,6 @@ package net.liftweb.json
 
 import JsonAST._
 
-// FIXME add oldValue for changed
 case class Diff(changed: JValue, added: JValue, deleted: JValue) {
   def map(f: JValue => JValue): Diff = this match {
     case x @ Diff(JNothing, JNothing, JNothing) => x
