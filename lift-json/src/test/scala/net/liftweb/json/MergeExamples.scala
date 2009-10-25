@@ -43,7 +43,7 @@ object MergeExamples extends Specification {
         "key1":"val1",
         "key2":"newval2",
         "key3":"val3"
-      }
+      },
       "compiled": true,
     }""")
 

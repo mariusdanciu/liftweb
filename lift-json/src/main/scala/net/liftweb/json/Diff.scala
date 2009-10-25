@@ -67,8 +67,8 @@ object Diff {
 
   def diffVals(vs1: List[JValue], vs2: List[JValue]) = {
     def diffRec(xleft: List[JValue], yleft: List[JValue]): Diff = (xleft, yleft) match {
-      case (xs, Nil) => Diff(JNothing, JNothing, JArray(xs))
-      case (Nil, ys) => Diff(JNothing, JArray(ys), JNothing)
+      case (xs, Nil) => Diff(JNothing, JNothing, if (xs.isEmpty) JNothing else JArray(xs))
+      case (Nil, ys) => Diff(JNothing, if (ys.isEmpty) JNothing else JArray(ys), JNothing)
       case (x :: xs, y :: ys) =>
         val Diff(c1, a1, d1) = diff(x, y)
         val Diff(c2, a2, d2) = diffRec(xs, ys)
