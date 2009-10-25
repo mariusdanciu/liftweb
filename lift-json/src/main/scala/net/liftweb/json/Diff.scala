@@ -33,14 +33,15 @@ case class Diff(changed: JValue, added: JValue, deleted: JValue) {
 
 object Diff {
   def diff(val1: JValue, val2: JValue): Diff = (val1, val2) match {
+    case (x, y) if x == y => Diff(JNothing, JNothing, JNothing)
     case (JObject(xs), JObject(ys)) => diffFields(xs, ys)
+    case (JArray(xs), JArray(ys)) => diffVals(xs, ys)
     case (JField(xn, xv), JField(yn, yv)) if (xn == yn) => diff(xv, yv) map (JField(xn, _))
     case (x @ JField(xn, xv), y @ JField(yn, yv)) if (xn != yn) => Diff(JNothing, y, x)
     case (JInt(x), JInt(y)) if (x != y) => Diff(JInt(y), JNothing, JNothing)
     case (JDouble(x), JDouble(y)) if (x != y) => Diff(JDouble(y), JNothing, JNothing)
     case (JString(x), JString(y)) if (x != y) => Diff(JString(y), JNothing, JNothing)
     case (JBool(x), JBool(y)) if (x != y) => Diff(JBool(y), JNothing, JNothing)
-    case (x, y) if x == y => Diff(JNothing, JNothing, JNothing)
     case (x, y) => Diff(JNothing, y, x)
   }
 
@@ -59,6 +60,19 @@ object Diff {
           val Diff(c, a, d) = diffRec(xs, yleft)
           Diff(c, a, JObject(x :: Nil) merge d)
       }
+    }
+
+    diffRec(vs1, vs2)
+  }
+
+  def diffVals(vs1: List[JValue], vs2: List[JValue]) = {
+    def diffRec(xleft: List[JValue], yleft: List[JValue]): Diff = (xleft, yleft) match {
+      case (xs, Nil) => Diff(JNothing, JNothing, JArray(xs))
+      case (Nil, ys) => Diff(JNothing, JArray(ys), JNothing)
+      case (x :: xs, y :: ys) =>
+        val Diff(c1, a1, d1) = diff(x, y)
+        val Diff(c2, a2, d2) = diffRec(xs, ys)
+        Diff(c1 ++ c2, a1 ++ a2, d1 ++ d2)
     }
 
     diffRec(vs1, vs2)
