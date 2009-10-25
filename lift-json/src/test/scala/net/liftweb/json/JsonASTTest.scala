@@ -33,7 +33,7 @@ object JsonASTSpec extends Specification with JValueGen with ScalaCheck {
   }
 
   "Merge identity" in {
-    val identityProp = (json: JValue) => ((json merge JNothing) == json) && ((JNothing merge json) == json)
+    val identityProp = (json: JValue) => (json merge JNothing) == json && (JNothing merge json) == json
     forAll(identityProp) must pass
   }
 
@@ -41,6 +41,38 @@ object JsonASTSpec extends Specification with JValueGen with ScalaCheck {
     val idempotencyProp = (x: JValue) => (x merge x) == x
     forAll(idempotencyProp) must pass
   }
+
+  "Diff identity" in {
+    val identityProp = (json: JValue) => 
+      (json diff JNothing) == Diff(JNothing, JNothing, json) && 
+      (JNothing diff json) == Diff(JNothing, json, JNothing)
+
+    forAll(identityProp) must pass
+  }
+
+  "Diff with self is empty" in {
+    val emptyProp = (x: JValue) => x == Diff(JNothing, JNothing, JNothing)
+    forAll(emptyProp) must pass
+  }
+
+  "Diff is subset of originals" in {
+    val subsetProp = (x: JValue, y: JValue) => {
+      val Diff(c, a, d) = x diff y
+      val orig = x merge y
+      orig == (orig merge ((c merge a) merge d))
+    }
+    forAll(subsetProp) must pass
+  }
+
+  "Diff parts are disjoint" in {
+    val disjointProp = (x: JValue, y: JValue) => {
+      val Diff(c, a, d) = x diff y
+      (c diff a) == JNothing && (c diff d) == JNothing && (a diff d) == JNothing
+    }
+    forAll(disjointProp) must pass
+  }
+
+//  "Diff field reordering" 
 
   implicit def arbJValue: Arbitrary[JValue] = Arbitrary(genJValue)
 }

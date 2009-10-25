@@ -22,7 +22,7 @@ object JsonAST {
 
   def concat(xs: JValue*) = xs.foldLeft(JNothing: JValue)(_ ++ _)  
 
-  sealed abstract class JValue extends Merge.Mergeable {
+  sealed abstract class JValue extends Merge.Mergeable with Diff.Diffable {
     type Values
 
     def \(nameToFind: String): JValue = {
