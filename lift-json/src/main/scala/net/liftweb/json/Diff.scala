@@ -19,14 +19,12 @@ package net.liftweb.json
 import JsonAST._
 
 case class Diff(changed: JValue, added: JValue, deleted: JValue) {
-  def map(f: JValue => JValue): Diff = this match {
-    case x @ Diff(JNothing, JNothing, JNothing) => x
-    case Diff(x, JNothing, JNothing) => Diff(f(x), JNothing, JNothing)
-    case Diff(JNothing, x, JNothing) => Diff(JNothing, f(x), JNothing)
-    case Diff(JNothing, JNothing, x) => Diff(JNothing, JNothing, f(x))
-    case Diff(x, y, JNothing)        => Diff(f(x), f(y), JNothing)
-    case Diff(x, JNothing, y)        => Diff(f(x), JNothing, f(y))
-    case Diff(x, y, z)               => Diff(f(x), f(y), f(z))
+  def map(f: JValue => JValue): Diff = {
+    def applyTo(x: JValue) = x match {
+      case JNothing => JNothing
+      case _ => f(x)
+    }
+    Diff(applyTo(changed), applyTo(added), applyTo(deleted))
   }
 }
 
