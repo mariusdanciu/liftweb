@@ -48,7 +48,7 @@ object MergeExamples extends Specification {
     }""")
 
   "Lotto example" in {
-    (lotto1 merge lotto2) mustEqual expectedLottoResult
+    (lotto1 merge lotto2) mustEqual mergedLottoResult
   }
 
   val lotto1 = parse("""
@@ -73,7 +73,7 @@ object MergeExamples extends Specification {
       }
     }""")
 
-  val expectedLottoResult = parse("""
+  val mergedLottoResult = parse("""
     {
       "lotto":{
         "lotto-id":5,

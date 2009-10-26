@@ -103,11 +103,11 @@ Example produces following pretty printed JSON. Notice that draw-date field is n
       }
     }
 
-Merging
--------
+Merging & Diffing
+-----------------
 
-Two JSONs can be merged with each other.
-Please see more examples in src/test/scala/net/liftweb/json/MergeExamples.scala
+Two JSONs can be merged and diffed with each other.
+Please see more examples in src/test/scala/net/liftweb/json/MergeExamples.scala and src/test/scala/net/liftweb/json/DiffExamples.scala
 
     scala> import net.liftweb.json.JsonParser.parse
     scala> import net.liftweb.json.JsonAST._
@@ -132,8 +132,9 @@ Please see more examples in src/test/scala/net/liftweb/json/MergeExamples.scala
                }]
              }
            }""")
-
-    scala> pretty(render(lotto1 merge lotto2))
+    
+    scala> val mergedLotto = lotto1 merge lotto2
+    scala> pretty(render(mergedLotto))
     res0: String = 
     {
       "lotto":{
@@ -148,6 +149,12 @@ Please see more examples in src/test/scala/net/liftweb/json/MergeExamples.scala
         }]
       }
     }
+
+    scala> val Diff(changed, added, deleted) = mergedLotto diff lotto1
+    changed: net.liftweb.json.JsonAST.JValue = JNothing
+    added: net.liftweb.json.JsonAST.JValue = JNothing
+    deleted: net.liftweb.json.JsonAST.JValue = JObject(List(JField(lotto,JObject(List(JField(winners,JArray(List(JObject(List(JField(winner-id,JInt(54)), JField(numbers,JArray(List(JInt(52), JInt(3), JInt(12), JInt(11), JInt(18), JInt(22))))))))))))))
+
 
 Querying JSON
 =============
