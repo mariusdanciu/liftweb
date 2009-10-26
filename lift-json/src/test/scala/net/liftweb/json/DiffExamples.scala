@@ -44,4 +44,17 @@ object DiffExamples extends Specification {
     added mustEqual JNothing
     deleted mustEqual lotto2
   }
+
+  "Example from http://tlrobinson.net/projects/js/jsondiff/" in {
+    val json1 = read("/diff-example-json1.json")
+    val json2 = read("/diff-example-json2.json")
+    val expectedChanges = read("/diff-example-expected-changes.json")
+    val expectedAdditions = read("/diff-example-expected-additions.json")
+    val expectedDeletions = read("/diff-example-expected-deletions.json")
+
+    json1 diff json2 mustEqual Diff(expectedChanges, expectedAdditions, expectedDeletions)
+  }
+
+  private def read(resource: String) = 
+    parse(scala.io.Source.fromInputStream(classOf[DiffExamplesTest].getResourceAsStream(resource)).getLines.mkString)
 }
