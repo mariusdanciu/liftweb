@@ -55,16 +55,16 @@ object JsonASTSpec extends Specification with JValueGen with ScalaCheck {
     forAll(emptyProp) must pass
   }
 
-/*
   "Diff is subset of originals" in {
-    val subsetProp = (x: JValue, y: JValue) => {
+    val subsetProp = (x: JObject, y: JObject) => {
       val Diff(c, a, d) = x diff y
       val orig = x merge y
-      orig == (orig merge (c merge a))
+      orig == (orig merge (c merge d))
+      y == (y merge (c merge a))
     }
     forAll(subsetProp) must pass
   }
-  */
 
   implicit def arbJValue: Arbitrary[JValue] = Arbitrary(genJValue)
+  implicit def arbJObject: Arbitrary[JObject] = Arbitrary(genObject)
 }

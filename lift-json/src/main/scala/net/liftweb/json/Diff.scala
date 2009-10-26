@@ -44,7 +44,7 @@ object Diff {
     case (x, y) => Diff(JNothing, y, x)
   }
 
-  def diffFields(vs1: List[JField], vs2: List[JField]) = {
+  private def diffFields(vs1: List[JField], vs2: List[JField]) = {
     def diffRec(xleft: List[JField], yleft: List[JField]): Diff = xleft match {
       case Nil => Diff(JNothing, if (yleft.isEmpty) JNothing else JObject(yleft), JNothing)
       case x :: xs => yleft find (_.name == x.name) match {
@@ -64,7 +64,7 @@ object Diff {
     diffRec(vs1, vs2)
   }
 
-  def diffVals(vs1: List[JValue], vs2: List[JValue]) = {
+  private def diffVals(vs1: List[JValue], vs2: List[JValue]) = {
     def diffRec(xleft: List[JValue], yleft: List[JValue]): Diff = (xleft, yleft) match {
       case (xs, Nil) => Diff(JNothing, JNothing, if (xs.isEmpty) JNothing else JArray(xs))
       case (Nil, ys) => Diff(JNothing, if (ys.isEmpty) JNothing else JArray(ys), JNothing)
