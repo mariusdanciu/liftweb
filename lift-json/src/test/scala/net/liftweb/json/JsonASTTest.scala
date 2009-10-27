@@ -63,6 +63,16 @@ object JsonASTSpec extends Specification with JValueGen with ScalaCheck {
     forAll(subsetProp) must pass
   }
 
+  "Diff result is same when fields are reordered" in {
+    val reorderProp = (x: JObject) => (x diff reorderFields(x)) == Diff(JNothing, JNothing, JNothing)
+    forAll(reorderProp) must pass
+  } 
+
+  private def reorderFields(json: JValue) = json map {
+    case JObject(xs) => JObject(xs.reverse)
+    case x => x
+  }
+
   implicit def arbJValue: Arbitrary[JValue] = Arbitrary(genJValue)
   implicit def arbJObject: Arbitrary[JObject] = Arbitrary(genObject)
 }

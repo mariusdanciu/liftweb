@@ -57,4 +57,3 @@ object Merge {
     def merge(other: JValue): JValue = Merge.merge(this, other)
   }
 }
-
