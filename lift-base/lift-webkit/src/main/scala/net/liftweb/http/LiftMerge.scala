@@ -17,7 +17,7 @@
 package net.liftweb.http
 
 import _root_.scala.collection.mutable.{HashMap, ArrayBuffer, ListBuffer}
-import _root_.scala.xml.{Node, Text, NodeSeq, Elem, MetaData, Null, UnprefixedAttribute, PrefixedAttribute, Comment, Group}
+import _root_.scala.xml._
 import _root_.net.liftweb.util._
 import _root_.net.liftweb.common._
 import _root_.net.liftweb.http.js._
@@ -25,7 +25,7 @@ import Helpers._
 
 
 private[http] trait LiftMerge {
-  
+
   self : LiftSession =>
 
   /**
@@ -34,7 +34,7 @@ private[http] trait LiftMerge {
   private[http] def merge(xhtml: NodeSeq, req: Req): Node = {
     val snippetHashs: HashMap[String, Box[NodeSeq]] = this.deferredSnippets.is
     val waitUntil = millis + LiftRules.lazySnippetTimeout.vend.millis
-    val stripComments: Boolean = LiftRules.stripComments.vend()
+    val stripComments: Boolean = LiftRules.stripComments.vend
 
     def waitUntilSnippetsDone() {
       val myMillis = millis
@@ -52,7 +52,7 @@ private[http] trait LiftMerge {
     val processedSnippets: Map[String, NodeSeq] = Map( snippetHashs.toList.flatMap {
         case (name, Full(value)) => List((name, value))
         case (name, f: Failure) => List((name, LiftRules.deferredSnippetFailure.vend(f)))
-        case (name, Empty) => List((name, LiftRules.deferredSnippetTimeout.vend()))
+        case (name, Empty) => List((name, LiftRules.deferredSnippetTimeout.vend))
         case _ => Nil
       } :_*)
 
@@ -150,7 +150,7 @@ private[http] trait LiftMerge {
 
     if (!hasHtmlHeadAndBody) {
       val fixedHtml = _fixHtml(xhtml, false, false, false, false, false, false, false, false)
-      
+
       fixedHtml.find {
         case e: Elem => true
         case _ => false
@@ -208,7 +208,7 @@ private[http] trait LiftMerge {
         import JsCmds._
         import JE._
 
-        bodyChildren += JsCmds.Script((if (hasFuncsForOwner(RenderVersion.get)) OnLoad(JsRaw("liftAjax.lift_successRegisterGC()")) else Noop) & 
+        bodyChildren += JsCmds.Script((if (hasFuncsForOwner(RenderVersion.get)) OnLoad(JsRaw("liftAjax.lift_successRegisterGC()")) else Noop) &
                                         JsCrVar("lift_page", RenderVersion.get))
       }
 

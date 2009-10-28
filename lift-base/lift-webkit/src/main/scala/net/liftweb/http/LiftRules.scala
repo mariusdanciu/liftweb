@@ -513,8 +513,8 @@ object LiftRules extends Factory {
    * If a deferred snippet has a failure during render,
    * what should we display?
    */
-  val deferredSnippetTimeout: FactoryMaker[() => NodeSeq] =
-  new FactoryMaker(() => {() => {
+  val deferredSnippetTimeout: FactoryMaker[NodeSeq] =
+  new FactoryMaker(() => {
         if (Props.devMode)
         <div style="border: red solid 2px">
           A deferred snippet timed out during render.
@@ -526,17 +526,17 @@ object LiftRules extends Factory {
           </i>
         </div>
         else NodeSeq.Empty
-      }}) {}
+      }) {}
 
   /**
    * Should comments be stripped from the served XHTML
    */
-  val stripComments: FactoryMaker[() => Boolean] =
-  new FactoryMaker(() => {() => {
+  val stripComments: FactoryMaker[Boolean] =
+  new FactoryMaker(() => {
         if (Props.devMode)
         false
         else true
-      }}) {}
+      }) {}
 
 
   private[http] var ending = false
@@ -587,7 +587,7 @@ object LiftRules extends Factory {
   /**
    * Computes the Comet path by adding additional tokens on top of cometPath
    */
-  var calcCometPath: String => JsExp = prefix => { 
+  var calcCometPath: String => JsExp = prefix => {
     Str(prefix + "/" + cometPath + "/") +
     JsRaw("Math.floor(Math.random() * 100000000000)") +
     Str(S.session.map(s => S.encodeURL("/"+s.uniqueId)) openOr "")
