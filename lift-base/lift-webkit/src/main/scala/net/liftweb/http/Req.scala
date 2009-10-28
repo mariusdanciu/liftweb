@@ -25,6 +25,7 @@ import _root_.java.io.{InputStream, ByteArrayInputStream, File, FileInputStream,
 FileOutputStream}
 import _root_.scala.xml._
 import sitemap._
+import _root_.scala._
 
 
 @serializable
@@ -113,7 +114,7 @@ object Req {
       NamedPF.applyBox(RewriteRequest(path, reqType, request), rewrite) match {
         case Full(resp@RewriteResponse(_, _, true)) => resp
         case _: EmptyBox[_] => RewriteResponse(path, params)
-        case Full(resp) => processRewrite(resp.path, resp.params)
+        case Full(resp) => processRewrite(resp.path, params ++ resp.params)
       }
 
 
