@@ -107,7 +107,18 @@ object CustomClassExamples extends Specification {
     m.place mustEqual m2.place
     m.time.time mustEqual m2.time.time
   }
+
+  "List of custom classes example" in {
+    val ts = Times(List(new DateTime(123L), new DateTime(234L)))
+    val ser = swrite(ts)
+    val ts2 = read[Times](ser)
+    ts2.times(0).time mustEqual 123L
+    ts2.times(1).time mustEqual 234L
+    ts2.times.size mustEqual 2
+  }
 }
 
 case class Meeting(place: String, time: DateTime)
 class DateTime(val time: Long)
+
+case class Times(times: List[DateTime])

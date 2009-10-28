@@ -368,6 +368,7 @@ Serialization supports:
 * scala.Option
 * java.util.Date
 * Polymorphic Lists (see below)
+* Custom serializer functions for types which are not supported (see below)
 
 It does not support:
 
@@ -394,6 +395,29 @@ will get an extra field named 'jsonClass'.
 
 ShortTypeHints outputs short classname for all instances of configured objects. FullTypeHints outputs full
 classname. Other strategies can be implemented by extending TypeHints trait.
+
+Serializing non-supported types
+-------------------------------
+
+It is possible to plug in custom serializer + deserializer functions for any type which has a type hint.
+Now, if we have a non case class DateTime (thus, not supported by default), we can still serialize it
+by providing following functions.
+
+    scala> class DateTime(time: Long)
+
+    scala> val hints = new ShortTypeHints(classOf[DateTime] :: Nil) {
+             override def serialize: PartialFunction[Any, JObject] = {
+               case t: DateTime => JObject(JField("t", JInt(t.time)) :: Nil)
+             }
+
+             override def deserialize: PartialFunction[(String, JObject), Any] = {
+               case ("DateTime", JObject(JField("t", JInt(t)) :: Nil)) => new DateTime(t.longValue)
+             }
+           }
+           implicit val formats = Serialization.formats(hints)
+
+Function 'serialize' creates a JSON object to hold serialized data. Function 'deserialize' knows how
+to construct serialized object by pattern matching against serialized type hint and data.
 
 XML support
 ===========
