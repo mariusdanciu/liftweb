@@ -21,6 +21,8 @@ import java.util.Date
 import JsonAST._
 
 private[json] object Meta {
+  import com.thoughtworks.paranamer._
+  
   /** Intermediate metadata format for case classes.
    *  This ADT is constructed (and then memoized) from given case class using reflection.
    *
@@ -47,6 +49,7 @@ private[json] object Meta {
 
   private val mappings = new Memo[Class[_], Mapping]
   private val unmangledNames = new Memo[String, String]
+  private val paranamer = new CachingParanamer(new BytecodeReadingParanamer)
 
   private[json] def mappingOf(clazz: Class[_]) = {
     import Reflection._
@@ -57,9 +60,19 @@ private[json] object Meta {
       case true => ListConstructor(path.get, clazz, constructorArgs(clazz))
     }
 
-    def constructorArgs(clazz: Class[_]) = clazz.getDeclaredFields.filter(!static_?(_)).map { f =>
+    def constructorArgs(clazz: Class[_]) = orderedConstructorArgs(clazz).map { f =>
       fieldMapping(unmangleName(f), f.getType, f.getGenericType)
-    }.toList.reverse
+    }.toList
+
+    def orderedConstructorArgs(clazz: Class[_]) = {
+      safePrimaryConstructorOf(clazz) match {
+        case Some(x) => 
+          val names = paranamer.lookupParameterNames(x)
+          val fields = Map() ++ clazz.getDeclaredFields.filter(!static_?(_)).map(f => (f.getName, f))
+          for { n <- names } yield fields(n)
+        case None => Nil
+      }
+    }
 
     def fieldMapping(name: String, fieldType: Class[_], genericType: Type): Mapping = 
       if (primitive_?(fieldType)) Value(name, fieldType)
@@ -106,10 +119,14 @@ private[json] object Meta {
                                    classOf[java.lang.Byte], classOf[java.lang.Boolean], 
                                    classOf[java.lang.Short], classOf[Date])
 
-    def primaryConstructorOf[A](cl: Class[A]): JConstructor[A] = cl.getDeclaredConstructors.toList match {
-      case Nil => fail("Can't find primary constructor for class " + cl)
-      case x :: xs => x
-    }
+    def safePrimaryConstructorOf[A](cl: Class[A]): Option[JConstructor[A]] = 
+      cl.getDeclaredConstructors.toList match {
+        case Nil => None
+        case x :: xs => Some[JConstructor[A]](x)
+      }
+
+    def primaryConstructorOf[A](cl: Class[A]): JConstructor[A] = 
+      safePrimaryConstructorOf(cl).getOrElse(fail("Can't find primary constructor for class " + cl))
 
     def typeParameter(t: Type): Class[_] = {
       val ptype = t.asInstanceOf[ParameterizedType]
