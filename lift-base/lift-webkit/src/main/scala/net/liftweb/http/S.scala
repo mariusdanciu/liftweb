@@ -16,9 +16,7 @@
 package net.liftweb.http
 
 import _root_.scala.collection.mutable.{HashMap, ListBuffer}
-import _root_.scala.xml.{NodeSeq, Elem, Text, UnprefixedAttribute, Null, MetaData,
-                         PrefixedAttribute,
-                         Group, Node, HasKeyValue}
+import _root_.scala.xml._
 import _root_.scala.collection.immutable.{ListMap, TreeMap}
 import _root_.net.liftweb.common._
 import _root_.net.liftweb.util._
@@ -89,9 +87,9 @@ object S extends HasParams {
     def delete(name: String) = {
       add(HTTPCookie(name, "").setMaxAge(0))
     }
-    def delete(old: HTTPCookie) = 
+    def delete(old: HTTPCookie) =
       add(old.setMaxAge(0).setValue(""))
-    
+
   }
 
   /*
@@ -123,14 +121,14 @@ object S extends HasParams {
   private val inS = (new ThreadGlobal[Boolean]).set(false)
 
   /**
-   * The snippetMap holds mappings from snippet names to snippet functions. These mappings
+   * The _snippetMap holds mappings from snippet names to snippet functions. These mappings
    * are valid only in the current request. This val
    * is typically modified using the mapSnippet method.
    *
    * @see #mapSnippet
    * @see #locateMappedSnippet
    */
-  private val snippetMap = new ThreadGlobal[HashMap[String, NodeSeq => NodeSeq]]
+  private[http] object _snippetMap extends RequestVar[Map[String, NodeSeq => NodeSeq]](Map())
 
   /**
    * Holds the attributes that are set on the current snippet tag. Attributes are available
@@ -157,7 +155,7 @@ object S extends HasParams {
    * @see LiftRules#resourceBundleFactories
    */
   private val _resBundle = new ThreadGlobal[List[ResourceBundle]]
-  private val _stateSnip = new ThreadGlobal[HashMap[String, StatefulSnippet]]
+  private[http] object _statefulSnip extends RequestVar[Map[String, StatefulSnippet]](Map())
   private val _responseHeaders = new ThreadGlobal[ResponseInfoHolder]
   private val _responseCookies = new ThreadGlobal[CookieHolder]
   private val _lifeTime = new ThreadGlobal[Boolean]
@@ -832,14 +830,14 @@ for {
    */
   def logQuery(query: String, time: Long) = p_queryLog.is += (query, time)
 
-  private[http] def snippetForClass(cls: String): Box[StatefulSnippet] =
-  Box.legacyNullTest(_stateSnip.value).flatMap(_.get(cls))
+  def snippetForClass(cls: String): Box[StatefulSnippet] =
+  _statefulSnip.is.get(cls)
 
-  private[http] def setSnippetForClass(cls: String, inst: StatefulSnippet): Unit =
-  Box.legacyNullTest(_stateSnip.value).foreach(_(cls) = inst)
+  def setSnippetForClass(cls: String, inst: StatefulSnippet): Unit =
+  _statefulSnip.set(_statefulSnip.is.update(cls, inst))
 
   private[http] def unsetSnippetForClass(cls: String): Unit =
-  Box.legacyNullTest(_stateSnip.value).foreach(_ -= cls)
+  _statefulSnip.set(_statefulSnip.is - cls)
 
 
   private var _queryAnalyzer: List[(Box[Req], Long,
@@ -1077,13 +1075,9 @@ for {
   private def _innerInit[B](f: () => B): B = {
     _lifeTime.doWith(false) {
       _attrs.doWith(Nil) {
-        snippetMap.doWith(new HashMap) {
           _resBundle.doWith(Nil) {
             inS.doWith(true) {
-              _stateSnip.doWith(new HashMap) {
                 _nest2InnerInit(f)
-              }
-            }
           }
         }
       }
@@ -1614,7 +1608,7 @@ for {
 
   def currentSnippet: Box[String] = _currentSnippet.is
 
-  def locateMappedSnippet(name: String): Box[NodeSeq => NodeSeq] = Box(snippetMap.value.get(name))
+  def locateMappedSnippet(name: String): Box[NodeSeq => NodeSeq] = _snippetMap.is.get(name)
 
   /**
    * Associates a name with a snippet function 'func'. This can be used to change a snippet
@@ -1658,7 +1652,7 @@ for {
    * @param name The name of the snippet that you want to map (the part after "&lt;lift:").
    * @param func The snippet function to map to.
    */
-  def mapSnippet(name: String, func: NodeSeq => NodeSeq) {snippetMap.value(name) = func}
+  def mapSnippet(name: String, func: NodeSeq => NodeSeq) {_snippetMap.set(_snippetMap.is.update(name, func))}
 
   /**
    * Associates a name with a function impersonated by AFuncHolder. These are basically functions

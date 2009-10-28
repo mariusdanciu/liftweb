@@ -61,11 +61,20 @@ import _root_.scala.xml.{NodeSeq, Elem}
  *</pre>
  */
 trait StatefulSnippet extends DispatchSnippet {
-  private[http] var snippetName: String = ""
+  private[this] var _names: Set[String] = Set()
+  def addName(name: String) {
+    synchronized {
+      _names = _names + name
+    }
+  }
 
-  def registerThisSnippet() = S.setSnippetForClass(snippetName, this);
+  def names: Set[String] = synchronized {
+    _names
+  }
 
-  def unregisterThisSnippet() = S.unsetSnippetForClass(snippetName);
+  def registerThisSnippet() = names.foreach(n => S.setSnippetForClass(n, this))
+
+  def unregisterThisSnippet() =  names.foreach(n => S.unsetSnippetForClass(n))
 
   /**
    * create an anchor tag around a body
@@ -73,7 +82,7 @@ trait StatefulSnippet extends DispatchSnippet {
    * @param func - the function to invoke when the link is clicked
    * @param body - the NodeSeq to wrap in the anchor tag
    */
-  def link(to: String, func: () => Any, body: NodeSeq): Elem = SHtml.link(to, () => {registerThisSnippet; func()}, body)
+  def link(to: String, func: () => Any, body: NodeSeq): Elem = SHtml.link(to, () => {registerThisSnippet(); func()}, body)
 
   def redirectTo(where: String) = S.redirectTo(where, registerThisSnippet)
 }

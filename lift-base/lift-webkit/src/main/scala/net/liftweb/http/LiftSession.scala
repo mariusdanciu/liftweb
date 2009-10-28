@@ -714,7 +714,7 @@ class LiftSession(val _contextPath: String, val uniqueId: String,
   S.snippetForClass(cls) or
   (findSnippetClass(cls).flatMap(c => instantiateOrRedirect(c)) match {
       case Full(inst: StatefulSnippet) =>
-        inst.snippetName = cls; S.setSnippetForClass(cls, inst); Full(inst)
+        inst.addName(cls); S.setSnippetForClass(cls, inst); Full(inst)
       case Full(ret) => Full(ret)
       case fail : Failure => fail
       case _ => Empty
