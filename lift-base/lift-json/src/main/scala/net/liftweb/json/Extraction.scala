@@ -40,14 +40,18 @@ object Extraction {
     }
 
   def decompose(a: Any)(implicit formats: Formats): JValue = {
+    def prependTypeHint(clazz: Class[_], o: JObject) = 
+      JField("jsonClass", JString(formats.typeHints.hintFor(clazz))) ++ o
+
     def mkObject(clazz: Class[_], fields: List[JField]) = formats.typeHints.containsHint_?(clazz) match {
-      case true => JObject(JField("jsonClass", JString(formats.typeHints.hintFor(clazz))) :: fields)
+      case true => prependTypeHint(clazz, JObject(fields))
       case false => JObject(fields)
     }
  
     val serializer = formats.typeHints.serialize
+    val any = a.asInstanceOf[AnyRef]
     if (!serializer.isDefinedAt(a)) {
-      a.asInstanceOf[AnyRef] match {
+      any match {
         case null => JNull
         case x if primitive_?(x.getClass) => primitive2jvalue(x)(formats)
         case x: List[_] => JArray(x map decompose)
@@ -61,7 +65,7 @@ object Extraction {
             case fields => mkObject(x.getClass, fields)
           }
       }
-    } else serializer(a)
+    } else prependTypeHint(any.getClass, serializer(any))
   }
 
   private def extract0[A](json: JValue, formats: Formats, mf: Manifest[A]): A = {

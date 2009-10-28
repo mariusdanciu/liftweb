@@ -90,12 +90,12 @@ object CustomClassExamples extends Specification {
   import JsonAST._
 
   val hints = new ShortTypeHints(classOf[DateTime] :: Nil) {
-    override def serialize: PartialFunction[Any, JValue] = {
-      case t: DateTime => JInt(t.time)
+    override def serialize: PartialFunction[Any, JObject] = {
+      case t: DateTime => JObject(JField("t", JInt(t.time)) :: Nil)
     }
 
-    override def deserialize: PartialFunction[(String, JValue), Any] = {
-      case ("DateTime", JInt(t)) => new DateTime(t.longValue)
+    override def deserialize: PartialFunction[(String, JObject), Any] = {
+      case ("DateTime", JObject(JField("t", JInt(t)) :: Nil)) => new DateTime(t.longValue)
     }
   }
   implicit val formats = Serialization.formats(hints)
@@ -103,7 +103,9 @@ object CustomClassExamples extends Specification {
   "Custom class serialization using provided serialization and deserialization functions" in {
     val m = Meeting("The place", new DateTime(1256681210802L))
     val ser = swrite(m)
-    read[Meeting](ser) mustEqual m
+    val m2 = read[Meeting](ser)
+    m.place mustEqual m2.place
+    m.time.time mustEqual m2.time.time
   }
 }
 
