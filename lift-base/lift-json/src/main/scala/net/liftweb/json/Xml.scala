@@ -48,7 +48,7 @@ object Xml {
         case g: Group => flattenText(g.nodes.toList)
         case n: Node => flattenText(n.child.toList)
       }
-      (foundText && cnt == 0) || (!foundText && cnt == 1)
+      foundText && cnt == 0
     }
 
     def array_?(nodeNames: Seq[String]) = nodeNames.size != 1 && nodeNames.toList.removeDuplicates.size == 1

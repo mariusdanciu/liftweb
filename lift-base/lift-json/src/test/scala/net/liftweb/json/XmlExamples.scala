@@ -152,7 +152,7 @@ object XmlExamples extends Specification {
   "Example with one attribute, one nested element " in { 
     val a = attrToObject("stats", "count", s => JInt(s.s.toInt)) _
     compact(render(a(toJson(messageXml2)))) mustEqual expected2
-//    compact(render(a(toJson(messageXml3)))) mustEqual expected2
+    compact(render(a(toJson(messageXml3)))) mustEqual expected2
   }
 
   val messageXml1 = 
