@@ -18,12 +18,18 @@ package net.liftweb.util
 import Helpers._
 import common._
 
+// This object holds string constants in a central place
+private[liftweb] object VarConstants {
+  val varPrefix = "_lift_sv_"
+  val initedSuffix = "_inited_?"
+}
+
 /**
  * Abstract a request or a session scoped variable.
  */
 abstract class AnyVar[T, MyType <: AnyVar[T, MyType]](dflt: => T) extends PSettableValueHolder[T] {
   self: MyType =>
-  protected lazy val name = "_lift_sv_"+getClass.getName+"_"+__nameSalt
+  protected lazy val name = VarConstants.varPrefix+getClass.getName+"_"+__nameSalt
   protected def findFunc(name: String): Box[T]
   protected def setFunc(name: String, value: T): Unit
   protected def clearFunc(name: String): Unit
@@ -42,7 +48,11 @@ abstract class AnyVar[T, MyType <: AnyVar[T, MyType]](dflt: => T) extends PSetta
       case _ => val ret = dflt
         testInitialized
         apply(ret)
-        ret
+        // Use findFunc so that we clear the "unread" flag
+        findFunc(name) match {
+          case Full(v) => v
+          case _ => ret
+        }
     }
   }
 

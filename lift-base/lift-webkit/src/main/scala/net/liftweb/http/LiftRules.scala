@@ -1112,6 +1112,15 @@ object LiftRules extends Factory {
     case null => Empty
     case s => Helpers.toDate(s)
   }
+
+  /**
+   * This variable controls whether RequestVars that have been set but not subsequently
+   * read will be logged in Dev mode. Logging can be disabled at the per-RequestVar level
+   * via RequestVar.logUnreadVal
+   *
+   * @see RequestVar#logUnreadVal
+   */
+  var logUnreadRequestVars = true
 }
 
 case object BreakOut
