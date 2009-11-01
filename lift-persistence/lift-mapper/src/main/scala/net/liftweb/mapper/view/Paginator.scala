@@ -132,7 +132,7 @@ class Paginator[T <: Mapper[T]](val meta: MetaMapper[T], val snippet: ModelSnipp
       "allpages" -> {(n:NodeSeq) => pageLinks(0 until numPages, n)},
       "zoomedpages" -> {(ns: NodeSeq) =>
         val curPage = (first / num).toInt
-        println("Current page: " + curPage)
+
         val pages = List(curPage - 1020, curPage - 120, curPage - 20) ++
           (curPage-10 to curPage+10) ++
           List(curPage + 20, curPage + 120, curPage + 1020) filter { n=>

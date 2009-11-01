@@ -322,12 +322,14 @@ trait MetaMapper[A<:Mapper[A]] extends BaseMetaMapper with Mapper[A] {
     DB.use(dbId) {
       conn =>
       val bl = by.toList ::: addlQueryParams.is
-      val (query, start, max) = addEndStuffs(addFields("SELECT "+
+      val selectStatement = "SELECT "+
                                                        distinct(by)+
                                                        fields.map(_.dbSelectString).
                                                        mkString(", ")+
                                                        " FROM "+MapperRules.quoteTableName(_dbTableNameLC)+
-                                                       "  ", false, bl, conn), bl, conn)
+                                                       "  "
+
+      val (query, start, max) = addEndStuffs(addFields(selectStatement, false, bl, conn), bl, conn)
       DB.prepareStatement(query, conn) {
         st =>
         setStatementFields(st, bl, 1)
@@ -754,9 +756,11 @@ trait MetaMapper[A<:Mapper[A]] extends BaseMetaMapper with Mapper[A] {
         case None => {
             val colType = meta.getColumnType(pos)
             val fieldInfo = mappedColumns.get(colName)
+
             val setTo =
             if (fieldInfo != None) {
               val tField = fieldInfo.get.invoke(this).asInstanceOf[MappedField[AnyRef, A]]
+
               Some(colType match {
                   case Types.INTEGER | Types.BIGINT => {
                       val bsl = tField.buildSetLongValue(fieldInfo.get, colName)
@@ -777,7 +781,9 @@ trait MetaMapper[A<:Mapper[A]] extends BaseMetaMapper with Mapper[A] {
                       }
                     }
                 })
-            } else None
+            } else {
+              None
+            }
 
             columnNameToMappee(colName) = Box(setTo)
             Box(setTo)
@@ -888,17 +894,17 @@ trait MetaMapper[A<:Mapper[A]] extends BaseMetaMapper with Mapper[A] {
 
     import java.lang.reflect.Modifier
 
-  /**
-  * Find the magic mapper fields on the superclass
-  */
+    /**
+     * Find the magic mapper fields on the superclass
+     */
     def findMagicFields(onMagic: Mapper[A], staringClass: Class[_]): List[Method] = {
 
-    // If a class name ends in $module, it's a subclass created for scala object instances
+      // If a class name ends in $module, it's a subclass created for scala object instances
       def deMod(in: String): String =
       if (in.endsWith("$module")) in.substring(0, in.length - 7)
       else in
 
-    // find the magic fields for the given superclass
+      // find the magic fields for the given superclass
       def findForClass(clz: Class[_]): List[Method] = clz match {
         case null => Nil
         case c =>
@@ -908,7 +914,7 @@ trait MetaMapper[A<:Mapper[A]] extends BaseMetaMapper with Mapper[A] {
                            filter(f => classOf[MappedField[_, _]].isAssignableFrom(f.getType)).
                            map(f => (deMod(f.getName), f)) :_*)
 
-        // this method will find all the super classes and super-interfaces
+          // this method will find all the super classes and super-interfaces
           def getAllSupers(clz: Class[_]): List[Class[_]] = clz match {
             case null => Nil
             case c =>
@@ -916,8 +922,8 @@ trait MetaMapper[A<:Mapper[A]] extends BaseMetaMapper with Mapper[A] {
               getAllSupers(c.getSuperclass)
           }
 
-        // does the method return an actual instance of an actual class that's
-        // associated with this Mapper class
+          // does the method return an actual instance of an actual class that's
+          // associated with this Mapper class
           def validActualType(meth: Method): Boolean = {
             try {
               // invoke the method
@@ -943,7 +949,7 @@ trait MetaMapper[A<:Mapper[A]] extends BaseMetaMapper with Mapper[A] {
             }
           }
 
-        // find all the declared methods
+          // find all the declared methods
           val meths = c.getDeclaredMethods.toList.
           filter(_.getParameterTypes.length == 0). // that take no parameters
           filter(m => Modifier.isPublic(m.getModifiers)). // that are public
@@ -969,7 +975,7 @@ trait MetaMapper[A<:Mapper[A]] extends BaseMetaMapper with Mapper[A] {
         case mf: MappedField[AnyRef, A] if !mf.ignoreField_? =>
           mf.setName_!(v.getName)
           tArray += FieldHolder(mf.name, v, mf)
-          for (colName <- mf.dbColumnNames(v.getName).map(MapperRules.quoteColumnName)) {
+          for (colName <- mf.dbColumnNames(v.getName).map(MapperRules.quoteColumnName).map(_.toLowerCase)) {
             mappedColumnInfo(colName) = mf
             mappedColumns(colName) = v
           }
@@ -1140,7 +1146,16 @@ trait MetaMapper[A<:Mapper[A]] extends BaseMetaMapper with Mapper[A] {
   /**
    * The table name, to lower case... ensures that it works on all DBs
    */
-  final lazy val _dbTableNameLC = dbTableName.toLowerCase
+  final def _dbTableNameLC = {
+    val name = dbTableName
+
+    val conn = DB.currentConnection
+    if (conn.isDefined) {
+      val rc = conn.open_!
+      if (rc.metaData.storesMixedCaseIdentifiers) name
+      else name.toLowerCase
+    } else name
+  }  // dbTableName.toLowerCase
 
   private[mapper] lazy val internal_dbTableName = fixTableName(internalTableName_$_$)
 
@@ -1540,10 +1555,12 @@ trait KeyedMetaMapper[Type, A<:KeyedMapper[Type, A]] extends MetaMapper[A] with 
     DB.use(dbId) {
       conn =>
       val bl = by.toList  ::: addlQueryParams.is
-      val (query, start, max) = addEndStuffs(addFields("SELECT "+
+      val selectStatement = "SELECT "+
                                                        fields.map(_.dbSelectString).
                                                        mkString(", ")+
-                                                       " FROM "+MapperRules.quoteTableName(_dbTableNameLC)+" ",false,  bl, conn), bl, conn)
+                                                       " FROM "+MapperRules.quoteTableName(_dbTableNameLC)+" "
+
+      val (query, start, max) = addEndStuffs(addFields(selectStatement,false,  bl, conn), bl, conn)
       DB.prepareStatement(query, conn) {
         st =>
         setStatementFields(st, bl, 1)

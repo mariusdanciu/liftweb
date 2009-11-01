@@ -151,7 +151,17 @@ trait BaseMappedField extends SelectableField with Bindable with MixableMappedFi
   /**
    * The forced lower case column names
    */
-  final def _dbColumnNameLC = dbColumnName.toLowerCase
+  final def _dbColumnNameLC =
+  {
+    val name = dbColumnName
+
+    val conn = DB.currentConnection
+    if (conn.isDefined) {
+      val rc = conn.open_!
+      if (rc.metaData.storesMixedCaseIdentifiers) name
+      else name.toLowerCase
+    } else name
+  } // .toLowerCase
 
   /**
    *  Should the field be indexed?

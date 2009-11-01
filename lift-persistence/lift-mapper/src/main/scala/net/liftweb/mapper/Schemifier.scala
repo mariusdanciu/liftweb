@@ -189,20 +189,20 @@ object Schemifier {
       var cols: List[String] = Nil
       val totalColCnt = field.dbColumnCount
       val md = connection.getMetaData
+
       using(md.getColumns(null, getDefaultSchemaName(connection), actualTableNames(table._dbTableNameLC), null))(rs =>
         while (hasColumn < totalColCnt && rs.next) {
           val tableName = rs.getString(3).toLowerCase
           val columnName = rs.getString(4).toLowerCase
 
-          if (tableName == table._dbTableNameLC.toLowerCase && field.dbColumnNames(field.name).contains(columnName)) {
+          if (tableName == table._dbTableNameLC.toLowerCase && field.dbColumnNames(field.name).map(_.toLowerCase).contains(columnName)) {
             cols = columnName :: cols
             hasColumn = hasColumn + 1
           }
         })
 
-
       // FIXME deal with column types
-      (field.dbColumnNames(field.name) -- cols).foreach {
+      (field.dbColumnNames(field.name).filter(f => !cols.map(_.toLowerCase).contains(f.toLowerCase))).foreach {
         colName =>
         cmds += maybeWrite(performWrite, logFunc, connection) {
           () => "ALTER TABLE "+table._dbTableNameLC+" "+connection.driverType.alterAddColumn+" "+field.fieldCreatorString(connection.driverType, colName)

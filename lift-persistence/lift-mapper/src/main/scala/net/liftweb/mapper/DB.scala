@@ -84,7 +84,7 @@ object DB {
   private def clearThread(success: Boolean): Unit = {
     val ks = info.keySet
     if (ks.isEmpty)
-      threadStore.remove
+    threadStore.remove
     else {
       ks.foreach(n => releaseConnectionNamed(n, !success))
       clearThread(success)
@@ -100,7 +100,7 @@ object DB {
         new SuperConnection(conn, () => {Log.debug("Connection ID " + uniqueId + " for JNDI connection " + name.jndiName + " closed"); conn.close})
       } openOr {
         throw new NullPointerException("Looking for Connection Identifier " + name + " but failed to find either a JNDI data source " +
-                "with the name " + name.jndiName + " or a lift connection manager with the correct name")
+                                       "with the name " + name.jndiName + " or a lift connection manager with the correct name")
       }
     }
     ret.setAutoCommit(false)
@@ -123,36 +123,36 @@ object DB {
    * the DefaultConnectionIdentifier transactional for the complete HTTP request
    */
   def buildLoanWrapper(): LoanWrapper =
-    buildLoanWrapper(List(DefaultConnectionIdentifier))
+  buildLoanWrapper(List(DefaultConnectionIdentifier))
 
   /**
    * Build a LoanWrapper to pass into S.addAround() to make requests for
    * the List of ConnectionIdentifiers transactional for the complete HTTP request
    */
   def buildLoanWrapper(in: List[ConnectionIdentifier]): LoanWrapper =
-    new LoanWrapper {
-      private object DepthCnt extends DynoVar[Boolean]
+  new LoanWrapper {
+    private object DepthCnt extends DynoVar[Boolean]
 
-      def apply[T](f: => T): T = if (DepthCnt.is == Full(true)) f
-      else DepthCnt.run(true) {
-        var success = false
-        CurrentConnectionSet.run(new ThreadBasedConnectionManager(in)) {
-          try {
-            val ret = f
-            success = true
-            ret
-          } finally {
-            clearThread(success)
-          }
+    def apply[T](f: => T): T = if (DepthCnt.is == Full(true)) f
+    else DepthCnt.run(true) {
+      var success = false
+      CurrentConnectionSet.run(new ThreadBasedConnectionManager(in)) {
+        try {
+          val ret = f
+          success = true
+          ret
+        } finally {
+          clearThread(success)
         }
-
       }
+
     }
+  }
 
   private def releaseConnection(conn: SuperConnection): Unit = conn.close
 
   private def calcBaseCount(conn: ConnectionIdentifier): Int =
-    CurrentConnectionSet.is.map(_.use(conn)) openOr 0
+  CurrentConnectionSet.is.map(_.use(conn)) openOr 0
 
   private def getConnection(name: ConnectionIdentifier): SuperConnection = {
     Log.trace("Acquiring connection " + name + " On thread " + Thread.currentThread)
@@ -162,7 +162,7 @@ object DB {
     }
     info(name) = ret
     Log.trace("Acquired connection " + name + " on thread " + Thread.currentThread +
-            " count " + ret.cnt)
+              " count " + ret.cnt)
     ret.conn
   }
 
@@ -182,7 +182,7 @@ object DB {
         info(name) = ConnectionHolder(c, n - 1, post)
 
       case _ =>
-    // ignore
+        // ignore
     }
   }
 
@@ -222,19 +222,19 @@ object DB {
   }
 
   def exec[T](db: SuperConnection, query: String)(f: (ResultSet) => T): T =
-    statement(db) {
-      st =>
-              f(st.executeQuery(query))
-    }
+  statement(db) {
+    st =>
+    f(st.executeQuery(query))
+  }
 
 
   private def asString(pos: Int, rs: ResultSet, md: ResultSetMetaData): String = {
     import _root_.java.sql.Types._
     md.getColumnType(pos) match {
       case ARRAY | BINARY | BLOB | DATALINK | DISTINCT | JAVA_OBJECT | LONGVARBINARY | NULL | OTHER | REF | STRUCT | VARBINARY => rs.getObject(pos) match {
-        case null => null
-        case s => s.toString
-      }
+          case null => null
+          case s => s.toString
+        }
       case DECIMAL | NUMERIC =>
         rs.getBigDecimal(pos).toString
 
@@ -271,7 +271,7 @@ object DB {
    * java.sql.Date, java.sql.Time, or java.sql.Timestamp classes.
    */
   def runQuery(query: String, params: List[Any]): (List[String], List[List[String]]) =
-    runQuery(query, params, DefaultConnectionIdentifier)
+  runQuery(query, params, DefaultConnectionIdentifier)
 
   /**
    * Executes the given parameterized query string with the given parameters.
@@ -281,28 +281,28 @@ object DB {
    */
   def runQuery(query: String, params: List[Any], connectionIdentifier: ConnectionIdentifier): (List[String], List[List[String]]) = {
     use(connectionIdentifier)(conn => prepareStatement(query, conn) {
-      ps =>
-              params.zipWithIndex.foreach {
-                case (null, idx) => ps.setNull(idx + 1, Types.VARCHAR)
-                case (i: Int, idx) => ps.setInt(idx + 1, i)
-                case (l: Long, idx) => ps.setLong(idx + 1, l)
-                case (d: Double, idx) => ps.setDouble(idx + 1, d)
-                case (f: Float, idx) => ps.setFloat(idx + 1, f)
-                // Allow the user to specify how they want the Date handled based on the input type
-                case (t: _root_.java.sql.Timestamp, idx) => ps.setTimestamp(idx + 1, t)
-                case (d: _root_.java.sql.Date, idx) => ps.setDate(idx + 1, d)
-                case (t: _root_.java.sql.Time, idx) => ps.setTime(idx + 1, t)
-                /* java.util.Date has to go last, since the java.sql date/time classes subclass it. By default we
-           * assume a Timestamp value */
-                case (d: _root_.java.util.Date, idx) => ps.setTimestamp(idx + 1, new _root_.java.sql.Timestamp(d.getTime))
-                case (b: Boolean, idx) => ps.setBoolean(idx + 1, b)
-                case (s: String, idx) => ps.setString(idx + 1, s)
-                case (bn: _root_.java.math.BigDecimal, idx) => ps.setBigDecimal(idx + 1, bn)
-                case (obj, idx) => ps.setObject(idx + 1, obj)
-              }
+        ps =>
+        params.zipWithIndex.foreach {
+          case (null, idx) => ps.setNull(idx + 1, Types.VARCHAR)
+          case (i: Int, idx) => ps.setInt(idx + 1, i)
+          case (l: Long, idx) => ps.setLong(idx + 1, l)
+          case (d: Double, idx) => ps.setDouble(idx + 1, d)
+          case (f: Float, idx) => ps.setFloat(idx + 1, f)
+            // Allow the user to specify how they want the Date handled based on the input type
+          case (t: _root_.java.sql.Timestamp, idx) => ps.setTimestamp(idx + 1, t)
+          case (d: _root_.java.sql.Date, idx) => ps.setDate(idx + 1, d)
+          case (t: _root_.java.sql.Time, idx) => ps.setTime(idx + 1, t)
+            /* java.util.Date has to go last, since the java.sql date/time classes subclass it. By default we
+             * assume a Timestamp value */
+          case (d: _root_.java.util.Date, idx) => ps.setTimestamp(idx + 1, new _root_.java.sql.Timestamp(d.getTime))
+          case (b: Boolean, idx) => ps.setBoolean(idx + 1, b)
+          case (s: String, idx) => ps.setString(idx + 1, s)
+          case (bn: _root_.java.math.BigDecimal, idx) => ps.setBigDecimal(idx + 1, bn)
+          case (obj, idx) => ps.setObject(idx + 1, obj)
+        }
 
-              resultSetTo(ps.executeQuery)
-    })
+        resultSetTo(ps.executeQuery)
+      })
   }
 
   def runQuery(query: String): (List[String], List[List[String]]) = {
@@ -408,379 +408,385 @@ object DB {
     }
   }
 
+  private object currentConn extends DynoVar[SuperConnection]
+
+  def currentConnection: Box[SuperConnection] = currentConn.is
+
   /**
    * Executes function  { @code f } with the connection named  { @code name }. Releases the connection
    * before returning.
    */
   def use[T](name: ConnectionIdentifier)(f: (SuperConnection) => T): T = {
     val conn = getConnection(name)
-    var rollback = true
-    try {
-      val ret = f(conn)
-      rollback = false
-      ret
-    } finally {
-      releaseConnectionNamed(name, rollback)
+    currentConn.run(conn) {
+      var rollback = true
+      try {
+        val ret = f(conn)
+        rollback = false
+        ret
+      } finally {
+        releaseConnectionNamed(name, rollback)
+      }
     }
   }
 
 
   val reservedWords = _root_.scala.collection.immutable.HashSet.empty ++
-          List("abort",
-            "accept",
-            "access",
-            "add",
-            "admin",
-            "after",
-            "all",
-            "allocate",
-            "alter",
-            "analyze",
-            "and",
-            "any",
-            "archive",
-            "archivelog",
-            "array",
-            "arraylen",
-            "as",
-            "asc",
-            "assert",
-            "assign",
-            "at",
-            "audit",
-            "authorization",
-            "avg",
-            "backup",
-            "base_table",
-            "become",
-            "before",
-            "begin",
-            "between",
-            "binary_integer",
-            "block",
-            "body",
-            "boolean",
-            "by",
-            "cache",
-            "cancel",
-            "cascade",
-            "case",
-            "change",
-            "char",
-            "character",
-            "char_base",
-            "check",
-            "checkpoint",
-            "close",
-            "cluster",
-            "clusters",
-            "cobol",
-            "colauth",
-            "column",
-            "columns",
-            "comment",
-            "commit",
-            "compile",
-            "compress",
-            "connect",
-            "constant",
-            "constraint",
-            "constraints",
-            "contents",
-            "continue",
-            "controlfile",
-            "count",
-            "crash",
-            "create",
-            "current",
-            "currval",
-            "cursor",
-            "cycle",
-            "database",
-            "data_base",
-            "datafile",
-            "date",
-            "dba",
-            "debugoff",
-            "debugon",
-            "dec",
-            "decimal",
-            "declare",
-            "default",
-            "definition",
-            "delay",
-            "delete",
-            "delta",
-            "desc",
-            "digits",
-            "disable",
-            "dismount",
-            "dispose",
-            "distinct",
-            "do",
-            "double",
-            "drop",
-            "dump",
-            "each",
-            "else",
-            "elsif",
-            "enable",
-            "end",
-            "entry",
-            "escape",
-            "events",
-            "except",
-            "exception",
-            "exception_init",
-            "exceptions",
-            "exclusive",
-            "exec",
-            "execute",
-            "exists",
-            "exit",
-            "explain",
-            "extent",
-            "externally",
-            "false",
-            "fetch",
-            "file",
-            "float",
-            "flush",
-            "for",
-            "force",
-            "foreign",
-            "form",
-            "fortran",
-            "found",
-            "freelist",
-            "freelists",
-            "from",
-            "function",
-            "generic",
-            "go",
-            "goto",
-            "grant",
-            "group",
-            "having",
-            "identified",
-            "if",
-            "immediate",
-            "in",
-            "including",
-            "increment",
-            "index",
-            "indexes",
-            "indicator",
-            "initial",
-            "initrans",
-            "insert",
-            "instance",
-            "notnull", // reserved word for PostgreSQL
-            "int",
-            "integer",
-            "intersect",
-            "into",
-            "is",
-            "key",
-            "language",
-            "layer",
-            "level",
-            "like",
-            "limited",
-            "link",
-            "lists",
-            "lock",
-            "logfile",
-            "long",
-            "loop",
-            "manage",
-            "manual",
-            "max",
-            "maxdatafiles",
-            "maxextents",
-            "maxinstances",
-            "maxlogfiles",
-            "maxloghistory",
-            "maxlogmembers",
-            "maxtrans",
-            "maxvalue",
-            "min",
-            "minextents",
-            "minus",
-            "minvalue",
-            "mlslabel",
-            "mod",
-            "mode",
-            "modify",
-            "module",
-            "mount",
-            "natural",
-            "new",
-            "next",
-            "nextval",
-            "noarchivelog",
-            "noaudit",
-            "nocache",
-            "nocompress",
-            "nocycle",
-            "nomaxvalue",
-            "nominvalue",
-            "none",
-            "noorder",
-            "noresetlogs",
-            "normal",
-            "nosort",
-            "not",
-            "notfound",
-            "nowait",
-            "null",
-            "number",
-            "number_base",
-            "numeric",
-            "of",
-            "off",
-            "offline",
-            "old",
-            "on",
-            "online",
-            "only",
-            "open",
-            "optimal",
-            "option",
-            "or",
-            "order",
-            "others",
-            "out",
-            "own",
-            "package",
-            "parallel",
-            "partition",
-            "pctfree",
-            "pctincrease",
-            "pctused",
-            "plan",
-            "pli",
-            "positive",
-            "pragma",
-            "precision",
-            "primary",
-            "prior",
-            "private",
-            "privileges",
-            "procedure",
-            "profile",
-            "public",
-            "quota",
-            "raise",
-            "range",
-            "raw",
-            "read",
-            "real",
-            "record",
-            "recover",
-            "references",
-            "referencing",
-            "release",
-            "remr",
-            "rename",
-            "resetlogs",
-            "resource",
-            "restricted",
-            "return",
-            "reuse",
-            "reverse",
-            "revoke",
-            "role",
-            "roles",
-            "rollback",
-            "row",
-            "rowid",
-            "rowlabel",
-            "rownum",
-            "rows",
-            "rowtype",
-            "run",
-            "savepoint",
-            "schema",
-            "scn",
-            "section",
-            "segment",
-            "select",
-            "separate",
-            "sequence",
-            "session",
-            "set",
-            "share",
-            "shared",
-            "size",
-            "smallint",
-            "snapshot",
-            "some",
-            "sort",
-            "space",
-            "sql",
-            "sqlbuf",
-            "sqlcode",
-            "sqlerrm",
-            "sqlerror",
-            "sqlstate",
-            "start",
-            "statement",
-            "statement_id",
-            "statistics",
-            "stddev",
-            "stop",
-            "storage",
-            "subtype",
-            "successful",
-            "sum",
-            "switch",
-            "synonym",
-            "sysdate",
-            "system",
-            "tabauth",
-            "table",
-            "tables",
-            "tablespace",
-            "task",
-            "temporary",
-            "terminate",
-            "then",
-            "thread",
-            "time",
-            "to",
-            "tracing",
-            "transaction",
-            "trigger",
-            "triggers",
-            "true",
-            "truncate",
-            "type",
-            "uid",
-            "under",
-            "union",
-            "unique",
-            "unlimited",
-            "until",
-            "update",
-            "use",
-            "user",
-            "using",
-            "validate",
-            "values",
-            "varchar",
-            "varchar2",
-            "variance",
-            "view",
-            "views",
-            "when",
-            "whenever",
-            "where",
-            "while",
-            "with",
-            "work",
-            "write",
-            "xor")
+  List("abort",
+       "accept",
+       "access",
+       "add",
+       "admin",
+       "after",
+       "all",
+       "allocate",
+       "alter",
+       "analyze",
+       "and",
+       "any",
+       "archive",
+       "archivelog",
+       "array",
+       "arraylen",
+       "as",
+       "asc",
+       "assert",
+       "assign",
+       "at",
+       "audit",
+       "authorization",
+       "avg",
+       "backup",
+       "base_table",
+       "become",
+       "before",
+       "begin",
+       "between",
+       "binary_integer",
+       "block",
+       "body",
+       "boolean",
+       "by",
+       "cache",
+       "cancel",
+       "cascade",
+       "case",
+       "change",
+       "char",
+       "character",
+       "char_base",
+       "check",
+       "checkpoint",
+       "close",
+       "cluster",
+       "clusters",
+       "cobol",
+       "colauth",
+       "column",
+       "columns",
+       "comment",
+       "commit",
+       "compile",
+       "compress",
+       "connect",
+       "constant",
+       "constraint",
+       "constraints",
+       "contents",
+       "continue",
+       "controlfile",
+       "count",
+       "crash",
+       "create",
+       "current",
+       "currval",
+       "cursor",
+       "cycle",
+       "database",
+       "data_base",
+       "datafile",
+       "date",
+       "dba",
+       "debugoff",
+       "debugon",
+       "dec",
+       "decimal",
+       "declare",
+       "default",
+       "definition",
+       "delay",
+       "delete",
+       "delta",
+       "desc",
+       "digits",
+       "disable",
+       "dismount",
+       "dispose",
+       "distinct",
+       "do",
+       "double",
+       "drop",
+       "dump",
+       "each",
+       "else",
+       "elsif",
+       "enable",
+       "end",
+       "entry",
+       "escape",
+       "events",
+       "except",
+       "exception",
+       "exception_init",
+       "exceptions",
+       "exclusive",
+       "exec",
+       "execute",
+       "exists",
+       "exit",
+       "explain",
+       "extent",
+       "externally",
+       "false",
+       "fetch",
+       "file",
+       "float",
+       "flush",
+       "for",
+       "force",
+       "foreign",
+       "form",
+       "fortran",
+       "found",
+       "freelist",
+       "freelists",
+       "from",
+       "function",
+       "generic",
+       "go",
+       "goto",
+       "grant",
+       "group",
+       "having",
+       "identified",
+       "if",
+       "immediate",
+       "in",
+       "including",
+       "increment",
+       "index",
+       "indexes",
+       "indicator",
+       "initial",
+       "initrans",
+       "insert",
+       "instance",
+       "notnull", // reserved word for PostgreSQL
+       "int",
+       "integer",
+       "intersect",
+       "into",
+       "is",
+       "key",
+       "language",
+       "layer",
+       "level",
+       "like",
+       "limited",
+       "link",
+       "lists",
+       "lock",
+       "logfile",
+       "long",
+       "loop",
+       "manage",
+       "manual",
+       "max",
+       "maxdatafiles",
+       "maxextents",
+       "maxinstances",
+       "maxlogfiles",
+       "maxloghistory",
+       "maxlogmembers",
+       "maxtrans",
+       "maxvalue",
+       "min",
+       "minextents",
+       "minus",
+       "minvalue",
+       "mlslabel",
+       "mod",
+       "mode",
+       "modify",
+       "module",
+       "mount",
+       "natural",
+       "new",
+       "next",
+       "nextval",
+       "noarchivelog",
+       "noaudit",
+       "nocache",
+       "nocompress",
+       "nocycle",
+       "nomaxvalue",
+       "nominvalue",
+       "none",
+       "noorder",
+       "noresetlogs",
+       "normal",
+       "nosort",
+       "not",
+       "notfound",
+       "nowait",
+       "null",
+       "number",
+       "number_base",
+       "numeric",
+       "of",
+       "off",
+       "offline",
+       "old",
+       "on",
+       "online",
+       "only",
+       "open",
+       "optimal",
+       "option",
+       "or",
+       "order",
+       "others",
+       "out",
+       "own",
+       "package",
+       "parallel",
+       "partition",
+       "pctfree",
+       "pctincrease",
+       "pctused",
+       "plan",
+       "pli",
+       "positive",
+       "pragma",
+       "precision",
+       "primary",
+       "prior",
+       "private",
+       "privileges",
+       "procedure",
+       "profile",
+       "public",
+       "quota",
+       "raise",
+       "range",
+       "raw",
+       "read",
+       "real",
+       "record",
+       "recover",
+       "references",
+       "referencing",
+       "release",
+       "remr",
+       "rename",
+       "resetlogs",
+       "resource",
+       "restricted",
+       "return",
+       "reuse",
+       "reverse",
+       "revoke",
+       "role",
+       "roles",
+       "rollback",
+       "row",
+       "rowid",
+       "rowlabel",
+       "rownum",
+       "rows",
+       "rowtype",
+       "run",
+       "savepoint",
+       "schema",
+       "scn",
+       "section",
+       "segment",
+       "select",
+       "separate",
+       "sequence",
+       "session",
+       "set",
+       "share",
+       "shared",
+       "size",
+       "smallint",
+       "snapshot",
+       "some",
+       "sort",
+       "space",
+       "sql",
+       "sqlbuf",
+       "sqlcode",
+       "sqlerrm",
+       "sqlerror",
+       "sqlstate",
+       "start",
+       "statement",
+       "statement_id",
+       "statistics",
+       "stddev",
+       "stop",
+       "storage",
+       "subtype",
+       "successful",
+       "sum",
+       "switch",
+       "synonym",
+       "sysdate",
+       "system",
+       "tabauth",
+       "table",
+       "tables",
+       "tablespace",
+       "task",
+       "temporary",
+       "terminate",
+       "then",
+       "thread",
+       "time",
+       "to",
+       "tracing",
+       "transaction",
+       "trigger",
+       "triggers",
+       "true",
+       "truncate",
+       "type",
+       "uid",
+       "under",
+       "union",
+       "unique",
+       "unlimited",
+       "until",
+       "update",
+       "use",
+       "user",
+       "using",
+       "validate",
+       "values",
+       "varchar",
+       "varchar2",
+       "variance",
+       "view",
+       "views",
+       "when",
+       "whenever",
+       "where",
+       "while",
+       "with",
+       "work",
+       "write",
+       "xor")
 }
 
 class SuperConnection(val connection: Connection, val releaseFunc: () => Unit, val schemaName: Box[String]) {
@@ -793,6 +799,8 @@ class SuperConnection(val connection: Connection, val releaseFunc: () => Unit, v
   def supportsForeignKeys_? : Boolean = driverType.supportsForeignKeys_?
 
   lazy val driverType: DriverType = DriverType.calcDriver(connection)
+
+  lazy val metaData = connection.getMetaData
 }
 
 object SuperConnection {
@@ -825,9 +833,9 @@ case object DefaultConnectionIdentifier extends ConnectionIdentifier {
  * @param dbPassword the optional db password
  */
 class StandardDBVendor(driverName: String,
-                     dbUrl: String,
-                     dbUser: Box[String],
-                     dbPassword: Box[String]) extends ProtoDBVendor {
+                       dbUrl: String,
+                       dbUser: Box[String],
+                       dbPassword: Box[String]) extends ProtoDBVendor {
   protected def createOne: Box[Connection] = try {
     Class.forName(driverName)
 
@@ -869,31 +877,31 @@ trait ProtoDBVendor extends ConnectionManager {
   }
 
   def newConnection(name: ConnectionIdentifier): Box[Connection] =
-    synchronized {
-      pool match {
-        case Nil if poolSize < maxPoolSize =>
-          val ret = createOne
-          ret.foreach(_.setAutoCommit(false))
-          poolSize = poolSize + 1
-          ret
+  synchronized {
+    pool match {
+      case Nil if poolSize < maxPoolSize =>
+        val ret = createOne
+        ret.foreach(_.setAutoCommit(false))
+        poolSize = poolSize + 1
+        ret
 
-        case Nil => wait(100L); newConnection(name)
+      case Nil => wait(100L); newConnection(name)
 
-        case x :: xs => try {
+      case x :: xs => try {
           this.testConnection(x)
           Full(x)
         } catch {
           case e => try {
-            pool = xs
-            poolSize = poolSize - 1
-            tryo(x.close)
-            newConnection(name)
-          } catch {
-            case e => newConnection(name)
-          }
+              pool = xs
+              poolSize = poolSize - 1
+              tryo(x.close)
+              newConnection(name)
+            } catch {
+              case e => newConnection(name)
+            }
         }
-      }
     }
+  }
 
   def releaseConnection(conn: Connection): Unit = synchronized {
     pool = conn :: pool
