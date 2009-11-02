@@ -15,6 +15,7 @@
     <resource>src/main/webapp/WEB-INF/web.xml</resource>
     <resource>src/main/webapp/templates-hidden/default.html</resource>
     <resource>src/main/webapp/index.html</resource>
+    <resource filtered="false">src/main/webapp/images/ajax-loader.gif</resource>
     <resource>src/main/webapp/static/index.html</resource>
   </resources>
   <testSources>

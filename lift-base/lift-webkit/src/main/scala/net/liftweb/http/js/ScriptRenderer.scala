@@ -110,7 +110,7 @@ object ScriptRenderer {
            if (liftAjax.lift_ajaxInProcess == null && queue[0].when <= now) {
              var aboutToSend = queue.shift();
 
-             lift_ajaxInProcess = aboutToSend;
+             liftAjax.lift_ajaxInProcess = aboutToSend;
 
              var successFunc = function(data) {
                liftAjax.lift_ajaxInProcess = null;
