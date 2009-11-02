@@ -214,6 +214,53 @@ object MapperSpecs extends Specification {
           archer.weight.is must_== 105
         }
 
+        "work with Mixed case update and delete" in {
+          cleanup()
+
+          
+          val elwood = Mixer.find(By(Mixer.name, "Elwood")).open_!
+
+
+          elwood.name.is must_== "Elwood"
+
+          elwood.name("FruitBar").weight(966).save
+
+          val fb = Mixer.find(By(Mixer.weight, 966)).open_!
+
+          fb.name.is must_== "FruitBar"
+
+          fb.weight.is must_== 966
+
+          fb.delete_!
+
+          Mixer.find(By(Mixer.weight, 966)).isDefined must_== false
+          Mixer.find(By(Mixer.name, "FruitBar")).isDefined must_== false
+          Mixer.find(By(Mixer.name, "Elwood")).isDefined must_== false
+         
+        }
+
+        "work with Mixed case update and delete for Dog2" in {
+          cleanup()
+
+          val elwood = Dog2.find(By(Dog2.name, "Elwood")).open_!
+
+          elwood.name.is must_== "Elwood"
+
+          elwood.name("FruitBar").actualAge(966).save
+
+          val fb = Dog2.find(By(Dog2.actualAge, 966)).open_!
+
+          fb.name.is must_== "FruitBar"
+
+          fb.actualAge.is must_== 966
+         
+          fb.delete_!
+
+          Dog2.find(By(Dog2.actualAge, 966)).isDefined must_== false
+          Dog2.find(By(Dog2.name, "FruitBar")).isDefined must_== false
+          Dog2.find(By(Dog2.name, "Elwood")).isDefined must_== false
+        }
+
         "Precache works with OrderBy with Mixed Case" in {
           if ((provider ne DBProviders.DerbyProvider)
               && (provider ne DBProviders.MySqlProvider)) { // this doesn't work for Derby, but it's a derby bug
@@ -421,8 +468,14 @@ object Mixer extends Mixer with LongKeyedMetaMapper[Mixer] {
   }
 }
 
-class Dog2 extends LongKeyedMapper[Dog2] with IdPK {
+class Dog2 extends LongKeyedMapper[Dog2] {
   def getSingleton = Dog2
+
+  override def primaryKeyField = dog2id
+
+  object dog2id extends MappedLongIndex[Dog2](this.asInstanceOf[MapperType]) {
+    override def dbColumnName = "DOG2_Id"
+  }
 
   object name extends MappedPoliteString(this, 128)
   object weight extends MappedInt(this)
@@ -449,7 +502,7 @@ object Dog2 extends Dog2 with LongKeyedMetaMapper[Dog2] {
   override def dbAddTable = Full(populate _)
 
   private def populate {
-    create.name("Elwood").save
+    create.name("Elwood").actualAge(66).save
     create.name("Madeline").save
     create.name("Archer").save
     create.name("fido").owner(User.find(By(User.firstName, "Elwood"))).isDog(true).save

@@ -617,9 +617,7 @@ trait MappedField[FieldType <: Any,OwnerType <: Mapper[OwnerType]] extends Typed
     case name => name
   }
 
-  lazy val dbSelectString = fieldOwner.getSingleton.
-  _dbTableNameLC + "." + _dbColumnNameLC
-
+  def dbSelectString = fieldOwner.getSingleton._dbTableNameLC + "." + _dbColumnNameLC
 
   def dbIndexed_? : Boolean = false
 

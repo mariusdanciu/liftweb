@@ -323,11 +323,11 @@ trait MetaMapper[A<:Mapper[A]] extends BaseMetaMapper with Mapper[A] {
       conn =>
       val bl = by.toList ::: addlQueryParams.is
       val selectStatement = "SELECT "+
-                                                       distinct(by)+
-                                                       fields.map(_.dbSelectString).
-                                                       mkString(", ")+
-                                                       " FROM "+MapperRules.quoteTableName(_dbTableNameLC)+
-                                                       "  "
+      distinct(by)+
+      fields.map(_.dbSelectString).
+      mkString(", ")+
+      " FROM "+MapperRules.quoteTableName(_dbTableNameLC)+
+      "  "
 
       val (query, start, max) = addEndStuffs(addFields(selectStatement, false, bl, conn), bl, conn)
       DB.prepareStatement(query, conn) {
@@ -542,7 +542,7 @@ trait MetaMapper[A<:Mapper[A]] extends BaseMetaMapper with Mapper[A] {
   )
 
   def indexedField(toSave: A): Box[MappedField[Any, A]] =
-  indexMap.map(im => ??(mappedColumns(im), toSave))
+  indexMap.map(im => ??(mappedColumns(im.toLowerCase), toSave))
 
   def saved_?(toSave: A): Boolean =
   toSave match {
@@ -826,8 +826,10 @@ trait MetaMapper[A<:Mapper[A]] extends BaseMetaMapper with Mapper[A] {
 
 
   private def createApplier(name : String, inst : AnyRef /*, clz : Class*/) : (A, AnyRef) => Unit = {
-    val accessor = mappedColumns.get(name)
-    if ((accessor eq null) || accessor == None) null else {
+    val accessor = mappedColumns.get(name) orElse mappedColumns.get(name.toLowerCase)
+    if ((accessor eq null) || accessor == None) {
+      null
+    } else {
       (accessor.get.invoke(this).asInstanceOf[MappedField[AnyRef, A]]).buildSetActualValue(accessor.get, inst, name)
     }
   }
@@ -1556,9 +1558,9 @@ trait KeyedMetaMapper[Type, A<:KeyedMapper[Type, A]] extends MetaMapper[A] with 
       conn =>
       val bl = by.toList  ::: addlQueryParams.is
       val selectStatement = "SELECT "+
-                                                       fields.map(_.dbSelectString).
-                                                       mkString(", ")+
-                                                       " FROM "+MapperRules.quoteTableName(_dbTableNameLC)+" "
+      fields.map(_.dbSelectString).
+      mkString(", ")+
+      " FROM "+MapperRules.quoteTableName(_dbTableNameLC)+" "
 
       val (query, start, max) = addEndStuffs(addFields(selectStatement,false,  bl, conn), bl, conn)
       DB.prepareStatement(query, conn) {
