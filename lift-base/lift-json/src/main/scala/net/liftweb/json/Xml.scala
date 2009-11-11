@@ -70,7 +70,7 @@ object Xml {
           (rootName match {
             case Some(n) => JField(n, obj)
             case None => obj
-          }) :: argStack
+          }) :: Nil
         }
       case nodes: NodeSeq => 
         val allLabels = nodes.map(_.label)

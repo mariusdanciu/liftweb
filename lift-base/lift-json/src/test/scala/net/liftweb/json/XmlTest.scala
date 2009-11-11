@@ -24,14 +24,6 @@ object XmlSpec extends Specification with NodeGen with JValueGen with ScalaCheck
     forAll(conversion) must pass
   }
 
-  "HarryH's XML parses correctly" in {
-    val xml1 = <venue><id>123</id></venue>
-    val xml2 = <venue> <id>{"1"}{"23"}</id> </venue>
-    Xml.toJson(xml1) must_== Xml.toJson(xml2)
-  }
-
-
   implicit def arbXml: Arbitrary[Node] = Arbitrary(genXml)
   implicit def arbJValue: Arbitrary[JValue] = Arbitrary(genObject)
-
 }
