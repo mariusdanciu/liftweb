@@ -22,6 +22,10 @@ object Xml {
 
   def toJson(xml: NodeSeq): JValue = {
     def empty_?(node: Node) = node.child.isEmpty
+
+    /* Checks if given node is leaf element. For instance these are considered leafs:
+     * <foo>bar</foo>, <foo>{ doSomething() }</foo>, etc.
+     */
     def leaf_?(node: Node) = {
       def descendant(n: Node): List[Node] = n match {
         case g: Group => g.nodes.toList.flatMap(x => x :: descendant(x))
