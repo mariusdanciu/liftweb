@@ -29,10 +29,10 @@ import _root_.scala.collection.mutable.{HashMap, HashSet, ListBuffer}
  *   object mySessionVar extends SessionVar[String]("hello")
  * }
  * </code>
- * 
+ *
  * The standard pattern is to create a singleton object extending SessionVar instead
  * of creating an instance variable of a concrete SessionVar subclass. This is preferred
- * because SessionVar will use the name of its instantiating class for part of its state 
+ * because SessionVar will use the name of its instantiating class for part of its state
  * maintenance mechanism.
  *
  * If you find it necessary to create a SessionVar subclass of which there may be more
@@ -41,7 +41,7 @@ import _root_.scala.collection.mutable.{HashMap, HashSet, ListBuffer}
  *
  * Note: SessionVars can be used within CometActors
  *
- * @param dflt - the default value to be returned if none was set prior to 
+ * @param dflt - the default value to be returned if none was set prior to
  * requesting a value to be returned from the container
  */
 abstract class SessionVar[T](dflt: => T) extends AnyVar[T, SessionVar[T]](dflt) {
@@ -59,6 +59,30 @@ abstract class SessionVar[T](dflt: => T) extends AnyVar[T, SessionVar[T]](dflt) 
     case _ =>
       if (showWarningWhenAccessedOutOfSessionScope_?)
       Log.warn("Setting a SessionVar "+name+" to "+value+" outside session scope") // added warning per issue 188
+  }
+
+      /**
+   * Different Vars require different mechanisms for synchronization.  This method implements
+   * the Var specific synchronization mechanism
+   */
+  def doSync[F](f: => F): F = S.session match {
+    case Full(s) =>
+      // lock the session while the Var-specific lock object is found/created
+      val lockName = name + VarConstants.lockSuffix
+      val lockObj = s.synchronized {
+        s.get[AnyRef](lockName) match {
+          case Full(lock) => lock
+          case _ => val lock = new AnyRef
+          s.set(lockName, lock)
+          lock
+        }
+      }
+
+      // execute the query in the scope of the lock obj
+      lockObj.synchronized {
+        f
+      }
+    case _ => f
   }
 
   def showWarningWhenAccessedOutOfSessionScope_? = false
@@ -96,9 +120,9 @@ private[http] trait HasLogUnreadVal {
  * A typesafe container for data with a lifetime nominally equivalent to the
  * lifetime of a page rendered by an HTTP request.
  * RequestVars maintain their value throughout the duration of the current HTTP
- * request and any callbacks for servicing AJAX calls associated with the rendered page.  
+ * request and any callbacks for servicing AJAX calls associated with the rendered page.
  * RequestVar instances have no value at the beginning of request servicing (excluding
- * AJAX callbacks) and their value is discarded at the end of request processing. 
+ * AJAX callbacks) and their value is discarded at the end of request processing.
  * They are commonly used to share values across many snippets. Basic usage:
  *
  * <code>
@@ -106,17 +130,17 @@ private[http] trait HasLogUnreadVal {
  *   object myRequestVar extends RequestVar[String]("hello")
  * }
  * </code>
- * 
+ *
  * The standard pattern is to create a singleton object extending RequestVar instead
  * of creating an instance variable of a concrete RequestVar subclass. This is preferred
- * because RequestVar will use the name of its instantiating class for part of its state 
+ * because RequestVar will use the name of its instantiating class for part of its state
  * maintenance mechanism.
  *
  * If you find it necessary to create a RequestVar subclass of which there may be more
  * than one instance, it is necessary to override the __nameSalt() method to return
  * a unique salt value for each instance to prevent name collisions.
  *
- * @param dflt - the default value to be returned if none was set prior to 
+ * @param dflt - the default value to be returned if none was set prior to
  * requesting a value to be returned from the container
  */
 abstract class RequestVar[T](dflt: => T) extends AnyVar[T, RequestVar[T]](dflt) with HasLogUnreadVal {
@@ -134,6 +158,12 @@ abstract class RequestVar[T](dflt: => T) extends AnyVar[T, RequestVar[T]](dflt) 
     RequestVarHandler.set(bn, this, true)
     old
   }
+
+  /**
+   * Different Vars require different mechanisms for synchronization.  This method implements
+   * the Var specific synchronization mechanism
+   */
+  def doSync[F](f: => F): F = f // no sync necessary for RequestVars... always on the same thread
 
   override protected def testWasSet(name: String): Boolean = {
     val bn = name + VarConstants.initedSuffix
@@ -164,11 +194,11 @@ abstract class RequestVar[T](dflt: => T) extends AnyVar[T, RequestVar[T]](dflt) 
  * A typesafe container for data with a lifetime strictly equal to the processing of a single
  * HTTP request. Unlike ordinary RequestVar instances, TransientRequestVars will not maintain
  * data for servicing of AJAX callbacks from a rendered page. This is useful in cases where
- * the value stored within the RequestVar cannot safely be used across multiple requests; an 
+ * the value stored within the RequestVar cannot safely be used across multiple requests; an
  * example of such a value is a JTA UserTransaction which has a lifecycle strictly coupled
  * to the actul HTTP request handling by the enclosing container.
  *
- * @param dflt - the default value to be returned if none was set prior to 
+ * @param dflt - the default value to be returned if none was set prior to
  * requesting a value to be returned from the container
  */
 private[liftweb] abstract class TransientRequestVar[T](dflt: => T) extends AnyVar[T, TransientRequestVar[T]](dflt) with HasLogUnreadVal {
@@ -191,6 +221,12 @@ private[liftweb] abstract class TransientRequestVar[T](dflt: => T) extends AnyVa
     val bn = name + VarConstants.initedSuffix
     TransientRequestVarHandler.get(name).isDefined || (TransientRequestVarHandler.get(bn) openOr false)
   }
+
+  /**
+   * Different Vars require different mechanisms for synchronization.  This method implements
+   * the Var specific synchronization mechanism
+   */
+  def doSync[F](f: => F): F = f // no sync necessary for RequestVars... always on the same thread
 
   override protected def registerCleanupFunc(in: Box[LiftSession] => Unit): Unit =
   TransientRequestVarHandler.addCleanupFunc(in)

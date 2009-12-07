@@ -487,6 +487,12 @@ trait Wizard extends DispatchSnippet with Factory {
       val bn = name + "_inited_?"
       WizardVarHandler.get(name).isDefined || (WizardVarHandler.get(bn) openOr false)
     }
+
+    /**
+     * Different Vars require different mechanisms for synchronization.  This method implements
+     * the Var specific synchronization mechanism
+     */
+    def doSync[F](f: => F): F = f // no sync necessary for RequestVars... always on the same thread
   }
 
 

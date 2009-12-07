@@ -22,6 +22,7 @@ import common._
 private[liftweb] object VarConstants {
   val varPrefix = "_lift_sv_"
   val initedSuffix = "_inited_?"
+  val lockSuffix="_lock_dude"
 }
 
 trait HasCalcDefaultValue[T] {
@@ -42,11 +43,11 @@ trait MemoizeVar[K, V]  {
 
   def apply(key: K, dflt: => V): V = get(key, dflt)
 
-  def get(key: K): Box[V] = synchronized {
+  def get(key: K): Box[V] = coreVar.doSync {
     coreVar.is.get(key)
   }
 
-  def get(key: K, dflt: => V): V = synchronized {
+  def get(key: K, dflt: => V): V = coreVar.doSync {
     get(key) match {
       case Full(v) => v
       case _ =>
@@ -56,7 +57,7 @@ trait MemoizeVar[K, V]  {
     }
   }
 
-  def set(key: K, value: V): Unit = synchronized {
+  def set(key: K, value: V): Unit = coreVar.doSync {
     coreVar.is.update(key, value)
   }
 
@@ -93,9 +94,15 @@ trait AnyVarTrait[T, MyType <: AnyVarTrait[T, MyType]] extends PSettableValueHol
   type CleanUpParam
 
   /**
+   * Different Vars require different mechanisms for synchronization.  This method implements
+   * the Var specific synchronization mechanism
+   */
+  def doSync[F](f: => F): F
+
+  /**
    * The current value of the variable
    */
-  def is: T = synchronized {
+  def is: T = doSync {
     findFunc(name) match {
       case Full(v) => v
       case _ => val ret = calcDefaultValue
@@ -109,7 +116,7 @@ trait AnyVarTrait[T, MyType <: AnyVarTrait[T, MyType]] extends PSettableValueHol
     }
   }
 
-  private def testInitialized: Unit = synchronized {
+  private def testInitialized: Unit = doSync {
     if (!wasInitialized(name)) {
       registerCleanupFunc(_onShutdown _)
     }
@@ -133,7 +140,7 @@ trait AnyVarTrait[T, MyType <: AnyVarTrait[T, MyType]] extends PSettableValueHol
   /**
    * Set the Var if it has not been calculated
    */
-  def setIsUnset(value: => T): T = synchronized {
+  def setIsUnset(value: => T): T = doSync {
     if (!set_?) {
       set(value)
     }
