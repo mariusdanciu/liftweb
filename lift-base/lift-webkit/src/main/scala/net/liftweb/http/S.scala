@@ -1147,7 +1147,7 @@ for {
          c <- ca) yield c
 
 
-  private[liftweb] def lightInit[B](request: Req, 
+  private[liftweb] def lightInit[B](request: Req,
                                  session: LiftSession,
                                  attrs: List[(Either[String, (String, String)], String)])(f: => B): B =
     this._request.doWith(request) {
@@ -2007,6 +2007,31 @@ for {
   def contextFuncBuilder(f: S.AFuncHolder): S.AFuncHolder = S.session match {
     case Full(s) => s.contextFuncBuilder(f)
     case _ => f
+  }
+
+  def render(xhtml: NodeSeq, httpRequest: HTTPRequest): NodeSeq = {
+    def doRender(session: LiftSession): NodeSeq =
+      session.processSurroundAndInclude("external render", xhtml)
+
+    if (inS.value) doRender(session.open_!)
+    else {
+      val req = Req(httpRequest, LiftRules.statelessRewrite.toList, System.nanoTime)
+      val ses: LiftSession = SessionMaster.getSession(httpRequest, Empty) match {
+        case Full(ret) =>
+          ret.fixSessionTime()
+          ret
+
+        case _ =>
+          val ret = LiftSession(httpRequest.session, req.contextPath)
+          ret.fixSessionTime()
+          SessionMaster.addSession(ret)
+          ret
+      }
+
+      init(req, ses) {
+        doRender(ses)
+      }
+    }
   }
 
   /**
