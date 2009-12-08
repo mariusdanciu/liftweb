@@ -130,24 +130,55 @@ object DB {
    * the List of ConnectionIdentifiers transactional for the complete HTTP request
    */
   def buildLoanWrapper(in: List[ConnectionIdentifier]): LoanWrapper =
-  new LoanWrapper {
-    private object DepthCnt extends DynoVar[Boolean]
+  buildLoanWrapper(true, in)
 
-    def apply[T](f: => T): T = if (DepthCnt.is == Full(true)) f
-    else DepthCnt.run(true) {
-      var success = false
-      CurrentConnectionSet.run(new ThreadBasedConnectionManager(in)) {
-        try {
-          val ret = f
-          success = true
-          ret
-        } finally {
-          clearThread(success)
+  /**
+   * Build a LoanWrapper to pass into S.addAround() to make requests for
+   * the DefaultConnectionIdentifier transactional for the complete HTTP request
+   */
+  def buildLoanWrapper(eager: Boolean): LoanWrapper =
+  buildLoanWrapper(eager, List(DefaultConnectionIdentifier))
+
+  /**
+   * Build a LoanWrapper to pass into S.addAround() to make requests for
+   * the List of ConnectionIdentifiers transactional for the complete HTTP request
+   */
+  def buildLoanWrapper(eager: Boolean, in: List[ConnectionIdentifier]): LoanWrapper =
+    new LoanWrapper {
+      private object DepthCnt extends DynoVar[Boolean]
+
+      def apply[T](f: => T): T = if (DepthCnt.is == Full(true)) f
+      else DepthCnt.run(true) {
+
+        var success = false
+        if (eager) {
+          def recurseMe(lst: List[ConnectionIdentifier]): T = lst match {
+            case Nil =>
+              try {
+                val ret = f
+                success = true
+                ret
+              } finally {
+                clearThread(success)
+              }
+
+            case x :: xs => DB.use(x) {ignore => recurseMe(xs)}
+          }
+          recurseMe(in)
+        } else {
+          CurrentConnectionSet.run(new ThreadBasedConnectionManager(in)) {
+            try {
+              val ret = f
+              success = true
+              ret
+            } finally {
+              clearThread(success)
+            }
+          }
         }
-      }
 
+      }
     }
-  }
 
   private def releaseConnection(conn: SuperConnection): Unit = conn.close
 
