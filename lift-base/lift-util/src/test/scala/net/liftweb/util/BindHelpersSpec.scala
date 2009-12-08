@@ -92,9 +92,31 @@ object BindHelpersSpec extends Specification with BindHelpers {
     "replace an attribute named 'namespace:bindparam name' in a NodeSeq with a new attribute name and value from an AttrBindParam" in {
       bind("user", <t user:tag="toreplace"></t>, AttrBindParam("tag", Text("world"), "hello")) must ==/(<t hello="world"></t>)
     }
+
     "replace an attribute named 'namespace:bindparam name' in a NodeSeq with a new attribute name and calculated value from an FuncAttrBindParam" in {
       bind("user", <t user:tag="dear"></t>, FuncAttrBindParam("tag", (n: NodeSeq) =>Text(n.text + " world"), "hello")) must ==/(<t hello="dear world"></t>)
     }
+
+    "replace an attribute named 'namespace:bindparam name' in a NodeSeq with a blank attribute name and calculated value from an FuncAttrOptionBindParam" in {
+      bind("user", <t user:tag="dear"></t>, FuncAttrOptionBindParam("tag", (n: NodeSeq) => None, "hello")) must ==/(<t/>)
+    }
+
+
+    "replace an attribute named 'namespace:bindparam name' in a NodeSeq with a new attribute name and calculated value from an FuncAttrOptionBindParam" in {
+      bind("user", <t user:tag="dear"></t>, FuncAttrOptionBindParam("tag", (n: NodeSeq) => Some(Text(n.text + " world")), "hello")) must ==/(<t hello="dear world"></t>)
+    }
+
+    "replace an attribute named 'namespace:bindparam name' in a NodeSeq with a blank attribute name and calculated value from an FuncAttrBoxBindParam" in {
+      bind("user", <t user:tag="dear"></t>, FuncAttrBoxBindParam("tag", (n: NodeSeq) => Empty, "hello")) must ==/(<t/>)
+    }
+
+
+    "replace an attribute named 'namespace:bindparam name' in a NodeSeq with a new attribute name and calculated value from an FuncAttrOptionBindParam" in {
+      bind("user", <t user:tag="dear"></t>, FuncAttrBoxBindParam("tag", (n: NodeSeq) => Full(Text(n.text + " world")), "hello")) must ==/(<t hello="dear world"></t>)
+    }
+
+
+
   }
   "the xmlParam function" should {
     "find the value of an attribute in an xml fragment" in {

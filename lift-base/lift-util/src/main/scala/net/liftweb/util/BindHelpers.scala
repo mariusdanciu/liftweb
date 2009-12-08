@@ -13,9 +13,7 @@ package net.liftweb.util
  * limitations under the License.
  */
 
-import _root_.scala.xml.{NodeSeq, Node, SpecialNode, Text, Elem,
-                         Group, MetaData, Null, UnprefixedAttribute,
-                         PrefixedAttribute}
+import _root_.scala.xml._
 import common._
 
 /**
@@ -183,7 +181,7 @@ trait BindHelpers {
    */
   sealed trait BindParam {
     def name: String
-    def calcValue(in: NodeSeq): NodeSeq
+    def calcValue(in: NodeSeq): Option[NodeSeq]
   }
 
   trait BindWithAttr {
@@ -194,14 +192,14 @@ trait BindHelpers {
    * Constant BindParam always returning the same value
    */
   final case class TheBindParam(name: String, value: NodeSeq) extends Tuple2(name, value) with BindParam {
-    def calcValue(in: NodeSeq): NodeSeq = value
+    def calcValue(in: NodeSeq): Option[NodeSeq] = Some(value)
   }
 
   /**
    * Constant BindParam always returning the same value
    */
   final case class TheStrBindParam(name: String, value: String) extends Tuple2(name, value) with BindParam {
-    def calcValue(in: NodeSeq): NodeSeq = Text(value)
+    def calcValue(in: NodeSeq): Option[NodeSeq] = Some(Text(value))
   }
 
   /**
@@ -209,49 +207,58 @@ trait BindHelpers {
    */
   final case class AttrBindParam(name: String, myValue: NodeSeq,
                                  newAttr: String) extends BindParam with BindWithAttr {
-    def calcValue(in: NodeSeq): NodeSeq = myValue
+    def calcValue(in: NodeSeq): Option[NodeSeq] = Some(myValue)
   }
 
   /**
    * BindParam using a function to calculate its value
    */
   final case class FuncBindParam(name: String, value: NodeSeq => NodeSeq) extends Tuple2(name, value) with BindParam {
-    def calcValue(in: NodeSeq): NodeSeq = value(in)
+    def calcValue(in: NodeSeq): Option[NodeSeq] = Some(value(in))
   }
 
   /**
    * BindParam using a function to calculate its value
    */
   final case class FuncAttrBindParam(name: String, value: NodeSeq => NodeSeq, newAttr: String) extends BindParam with BindWithAttr {
-    def calcValue(in: NodeSeq): NodeSeq = value(in)
+    def calcValue(in: NodeSeq): Option[NodeSeq] = Some(value(in))
   }
 
   final case class OptionBindParam(name: String, value: Option[NodeSeq]) extends Tuple2(name, value) with BindParam {
-    def calcValue(in: NodeSeq): NodeSeq = value getOrElse NodeSeq.Empty
+    def calcValue(in: NodeSeq): Option[NodeSeq] = value
   }
 
-  case class BoxBindParam(name: String, value: Box[NodeSeq]) extends Tuple2(name, value) with BindParam {
-    def calcValue(in: NodeSeq): NodeSeq = value openOr NodeSeq.Empty
+  final case class BoxBindParam(name: String, value: Box[NodeSeq]) extends Tuple2(name, value) with BindParam {
+    def calcValue(in: NodeSeq): Option[NodeSeq] = value
   }
 
-  case class SymbolBindParam(name: String, value: Symbol) extends Tuple2(name, value) with BindParam {
-    def calcValue(in: NodeSeq): NodeSeq = Text(value.name)
+  final case class FuncAttrOptionBindParam(name: String, func: NodeSeq => Option[NodeSeq], newAttr: String) extends BindParam with BindWithAttr {
+    def calcValue(in: NodeSeq): Option[NodeSeq] = func(in)
   }
 
-  case class IntBindParam(name: String, value: Int) extends Tuple2[String, Int](name, value) with BindParam {
-    def calcValue(in: NodeSeq): NodeSeq = Text(value.toString)
+  final case class FuncAttrBoxBindParam(name: String, func: NodeSeq => Box[NodeSeq], newAttr: String) extends BindParam with BindWithAttr {
+    def calcValue(in: NodeSeq): Option[NodeSeq] = func(in)
   }
 
-  case class LongBindParam(name: String, value: Long) extends Tuple2[String, Long](name, value) with BindParam {
-    def calcValue(in: NodeSeq): NodeSeq = Text(value.toString)
+
+  final case class SymbolBindParam(name: String, value: Symbol) extends Tuple2(name, value) with BindParam {
+    def calcValue(in: NodeSeq): Option[NodeSeq] = Some(Text(value.name))
   }
 
-  case class BooleanBindParam(name: String, value: Boolean) extends Tuple2[String, Boolean](name, value) with BindParam {
-    def calcValue(in: NodeSeq): NodeSeq = Text(value.toString)
+  final case class IntBindParam(name: String, value: Int) extends Tuple2[String, Int](name, value) with BindParam {
+    def calcValue(in: NodeSeq): Option[NodeSeq] = Some(Text(value.toString))
   }
 
-  case class TheBindableBindParam[T <: Bindable](name: String, value: T) extends Tuple2[String, T](name, value) with BindParam {
-    def calcValue(in: NodeSeq): NodeSeq = value.asHtml
+  final case class LongBindParam(name: String, value: Long) extends Tuple2[String, Long](name, value) with BindParam {
+    def calcValue(in: NodeSeq): Option[NodeSeq] = Some(Text(value.toString))
+  }
+
+  final case class BooleanBindParam(name: String, value: Boolean) extends Tuple2[String, Boolean](name, value) with BindParam {
+    def calcValue(in: NodeSeq): Option[NodeSeq] = Some(Text(value.toString))
+  }
+
+  final case class TheBindableBindParam[T <: Bindable](name: String, value: T) extends Tuple2[String, T](name, value) with BindParam {
+    def calcValue(in: NodeSeq): Option[NodeSeq] = Some(value.asHtml)
   }
 
   /**
@@ -415,8 +422,8 @@ trait BindHelpers {
         case upa: UnprefixedAttribute => new UnprefixedAttribute(upa.key, upa.value, attrBind(upa.next))
         case pa: PrefixedAttribute if pa.pre == namespace => map.get(pa.key) match {
             case None => paramFailureXform.map(_(pa)) openOr new PrefixedAttribute(pa.pre, pa.key, Text("FIX"+"ME find to bind attribute"), attrBind(pa.next))
-            case Some(abp: BindWithAttr) => new UnprefixedAttribute(abp.newAttr, abp.calcValue(pa.value), attrBind(pa.next))
-            case Some(bp: BindParam) => new PrefixedAttribute(pa.pre, pa.key, bp.calcValue(pa.value), attrBind(pa.next))
+            case Some(abp: BindWithAttr) => abp.calcValue(pa.value).map(v => new UnprefixedAttribute(abp.newAttr, v, attrBind(pa.next))) getOrElse attrBind(pa.next)
+            case Some(bp: BindParam) => bp.calcValue(pa.value).map(v => new PrefixedAttribute(pa.pre, pa.key, v, attrBind(pa.next))) getOrElse attrBind(pa.next)
           }
         case pa: PrefixedAttribute => new PrefixedAttribute(pa.pre, pa.key, pa.value, attrBind(pa.next))
       }
@@ -431,7 +438,7 @@ trait BindHelpers {
                 case Some(ns) =>
                   //val toRet = ns.calcValue(s.child)
                   //mergeBindAttrs(toRet, namespace, s.attributes)
-                  ns.calcValue(s.child)
+                  ns.calcValue(s.child) getOrElse NodeSeq.Empty
               }
             }
           case s : Elem if bindByNameType(s.label) && (attrStr(s, "name").startsWith(namespace+":")) && bindByNameTag(namespace, s) != "" => BindHelpers._currentNode.doWith(s) {
@@ -618,7 +625,7 @@ trait BindHelpers {
       case other =>
         other
     }
-    mix(bindParam.calcValue(s))
+    mix(bindParam.calcValue(s) getOrElse NodeSeq.Empty)
 
   }
 }
