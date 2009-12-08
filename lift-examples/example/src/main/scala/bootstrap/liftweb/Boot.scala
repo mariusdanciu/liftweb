@@ -25,6 +25,7 @@ import sitemap._
 import Helpers._
 
 import example._
+import widgets.autocomplete._
 import comet._
 import model._
 import lib._
@@ -95,6 +96,8 @@ class Boot {
     LiftRules.setSiteMap(SiteMap(MenuInfo.menu: _*))
 
     ThingBuilder.boot()
+
+    AutoComplete.init()
 
     // Dump information about session every 10 minutes
     SessionMaster.sessionWatchers = SessionInfoDumper ::
