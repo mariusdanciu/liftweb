@@ -886,9 +886,15 @@ class StandardDBVendor(driverName: String,
 trait ProtoDBVendor extends ConnectionManager {
   private var pool: List[Connection] = Nil
   private var poolSize = 0
+  private var tempMaxSize = maxPoolSize
 
   /**
-   * Override this method if you want something other than
+   * Override and set to false if the maximum pool size can temporarilly be expanded to avoid pool starvation
+   */
+  protected def allowTemporaryPoolExpansion = true
+
+  /**
+   *  Override this method if you want something other than
    * 4 connections in the pool
    */
   protected def maxPoolSize = 4
@@ -910,13 +916,19 @@ trait ProtoDBVendor extends ConnectionManager {
   def newConnection(name: ConnectionIdentifier): Box[Connection] =
   synchronized {
     pool match {
-      case Nil if poolSize < maxPoolSize =>
+      case Nil if poolSize < tempMaxSize =>
         val ret = createOne
         ret.foreach(_.setAutoCommit(false))
         poolSize = poolSize + 1
         ret
 
-      case Nil => wait(100L); newConnection(name)
+      case Nil =>
+        val curSize = poolSize
+        wait(50L)
+        if (pool.isEmpty && poolSize == curSize && allowTemporaryPoolExpansion) {
+          tempMaxSize += 1
+        }
+        newConnection(name)
 
         case x :: xs =>
           pool = xs
@@ -936,7 +948,13 @@ trait ProtoDBVendor extends ConnectionManager {
   }
 
   def releaseConnection(conn: Connection): Unit = synchronized {
-    pool = conn :: pool
-    notify
+    if (tempMaxSize > maxPoolSize) {
+      tryo{conn.close()}
+      tempMaxSize -= 1
+      poolSize -= 1
+    } else {
+      pool = conn :: pool
+    }
+    notifyAll
   }
 }
