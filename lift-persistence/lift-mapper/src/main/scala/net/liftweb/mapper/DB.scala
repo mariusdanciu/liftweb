@@ -28,7 +28,7 @@ import java.sql.{Statement, ResultSet, Types, PreparedStatement, Connection, Dri
 
 object DB {
   private val threadStore = new ThreadLocal[HashMap[ConnectionIdentifier, ConnectionHolder]]
-  private val envContext = FatLazy((new InitialContext).lookup("java:/comp/env").asInstanceOf[Context])
+  // private val envContext = FatLazy((new InitialContext).lookup("java:/comp/env").asInstanceOf[Context])
 
   var globalDefaultSchemaName: Box[String] = Empty
 
@@ -48,16 +48,11 @@ object DB {
    * can we get a JDBC connection from JNDI?
    */
   def jndiJdbcConnAvailable_? : Boolean = {
-    val touchedEnv = envContext.calculated_?
-
-    val ret = try {
-      (envContext.get.lookup(DefaultConnectionIdentifier.jndiName).asInstanceOf[DataSource].getConnection) != null
+    try {
+      ((new InitialContext).lookup("java:/comp/env").asInstanceOf[Context].lookup(DefaultConnectionIdentifier.jndiName).asInstanceOf[DataSource].getConnection) != null
     } catch {
       case e => false
     }
-
-    if (!touchedEnv) envContext.reset
-    ret
   }
 
   // var connectionManager: Box[ConnectionManager] = Empty
@@ -96,7 +91,7 @@ object DB {
       Helpers.tryo {
         val uniqueId = if (Log.isDebugEnabled) Helpers.nextNum.toString else ""
         Log.debug("Connection ID " + uniqueId + " for JNDI connection " + name.jndiName + " opened")
-        val conn = envContext.get.lookup(name.jndiName).asInstanceOf[DataSource].getConnection
+        val conn = (new InitialContext).lookup("java:/comp/env").asInstanceOf[Context].lookup(name.jndiName).asInstanceOf[DataSource].getConnection
         new SuperConnection(conn, () => {Log.debug("Connection ID " + uniqueId + " for JNDI connection " + name.jndiName + " closed"); conn.close})
       } openOr {
         throw new NullPointerException("Looking for Connection Identifier " + name + " but failed to find either a JNDI data source " +
@@ -914,42 +909,43 @@ trait ProtoDBVendor extends ConnectionManager {
   }
 
   def newConnection(name: ConnectionIdentifier): Box[Connection] =
-  synchronized {
-    pool match {
-      case Nil if poolSize < tempMaxSize =>
-        val ret = createOne
-        ret.foreach(_.setAutoCommit(false))
-        poolSize = poolSize + 1
-        ret
+    synchronized {
+      pool match {
+        case Nil if poolSize < tempMaxSize =>
+          val ret = createOne
+          ret.foreach(_.setAutoCommit(false))
+          poolSize = poolSize + 1
+          ret
 
-      case Nil =>
-        val curSize = poolSize
-        wait(50L)
-        if (pool.isEmpty && poolSize == curSize && allowTemporaryPoolExpansion) {
-          tempMaxSize += 1
-        }
-        newConnection(name)
+        case Nil =>
+          val curSize = poolSize
+          wait(50L)
+          // if we've waited 50 ms and the pool is still empty, temporarily expand it
+          if (pool.isEmpty && poolSize == curSize && allowTemporaryPoolExpansion) {
+            tempMaxSize += 1
+          }
+          newConnection(name)
 
         case x :: xs =>
           pool = xs
           try {
-          this.testConnection(x)
-          Full(x)
-        } catch {
-          case e => try {
-            poolSize = poolSize - 1
-            tryo(x.close)
-            newConnection(name)
+            this.testConnection(x)
+            Full(x)
           } catch {
-            case e => newConnection(name)
+            case e => try {
+              poolSize = poolSize - 1
+              tryo(x.close)
+              newConnection(name)
+            } catch {
+              case e => newConnection(name)
+            }
           }
-        }
+      }
     }
-  }
 
   def releaseConnection(conn: Connection): Unit = synchronized {
     if (tempMaxSize > maxPoolSize) {
-      tryo{conn.close()}
+      tryo {conn.close()}
       tempMaxSize -= 1
       poolSize -= 1
     } else {
