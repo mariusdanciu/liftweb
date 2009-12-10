@@ -28,6 +28,7 @@ import java.sql.{Statement, ResultSet, Types, PreparedStatement, Connection, Dri
 
 object DB {
   private val threadStore = new ThreadLocal[HashMap[ConnectionIdentifier, ConnectionHolder]]
+  private val _postCommitFuncs = new ThreadLocal[List[() => Unit]]
   // private val envContext = FatLazy((new InitialContext).lookup("java:/comp/env").asInstanceOf[Context])
 
   var globalDefaultSchemaName: Box[String] = Empty
@@ -75,12 +76,34 @@ object DB {
     }
   }
 
+  private def postCommit: List[() => Unit] =
+    _postCommitFuncs.get match {
+      case null =>
+        _postCommitFuncs.set(Nil)
+        Nil
+
+      case v => v
+    }
+
+  private def postCommit_=(lst: List[() => Unit]): Unit = _postCommitFuncs.set(lst)
+
+  /**
+   * perform this function post-commit.  THis is helpful for sending messages to Actors after we know
+   * a transaction has committed
+   */
+  def performPostCommit(f: => Unit) {
+    postCommit = (() => f) :: postCommit
+  }
+
   // remove thread-local association
   private def clearThread(success: Boolean): Unit = {
     val ks = info.keySet
-    if (ks.isEmpty)
-    threadStore.remove
-    else {
+    if (ks.isEmpty) {
+      postCommit.foreach(f => tryo(f.apply()))
+
+      _postCommitFuncs.remove
+      threadStore.remove
+    } else {
       ks.foreach(n => releaseConnectionNamed(n, !success))
       clearThread(success)
     }
