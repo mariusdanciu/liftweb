@@ -362,6 +362,7 @@ object LiftRules extends Factory with FormVendor {
         "comet" -> Comet, "form" -> Form, "ignore" -> Ignore, "loc" -> Loc,
         "surround" -> Surround,
         "test_cond" -> TestCond,
+        "TestCond" -> TestCond,
         "embed" -> Embed,
         "tail" -> Tail,
         "with-param" -> WithParam,
@@ -749,7 +750,7 @@ object LiftRules extends Factory with FormVendor {
    */
   @deprecated
   val rewrite = statelessRewrite
-  
+
   /**
    *  Holds the user's rewrite functions that can alter the URI parts and query parameters.
    * This rewrite takes place within the scope of the S state so SessionVars and other session-related
@@ -1071,7 +1072,7 @@ object LiftRules extends Factory with FormVendor {
    * Determins the path parts and suffix from given path parts
    */
   val suffixSplitters = RulesSeq[SplitSuffixPF].append {
-    case parts => 
+    case parts =>
       val last = parts.last
       val idx: Int = {
         val firstDot = last.indexOf(".")
