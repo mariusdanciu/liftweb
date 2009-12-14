@@ -163,13 +163,16 @@ trait Wizard extends DispatchSnippet with Factory {
 
 
     def bindFields(xhtml: NodeSeq): NodeSeq =
-      <form id={nextId} action={url} method="post">{S.formGroup(-1)(SHtml.hidden(() => snapshot.restore()))}{bind("wizard", xhtml, "line" -> bindFieldLine _)}{S.formGroup(4)(SHtml.hidden(() => {doNext(); val localSnapshot = createSnapshot; S.redirectTo(url, () => localSnapshot.restore)}))}</form> ++
+      (<form id={nextId} action={url} method="post">{S.formGroup(-1)(SHtml.hidden(() =>
+          snapshot.restore()))}{bind("wizard", xhtml, "line" -> bindFieldLine _)}{S.formGroup(4)(SHtml.hidden(() =>
+          {doNext(); val localSnapshot = createSnapshot; S.redirectTo(url, () => localSnapshot.restore)}))}</form> %
+          theScreen.additionalAttributes) ++
           <form id={prevId} action={url} method="post">{SHtml.hidden(() => {snapshot.restore(); this.prevScreen; val localSnapshot = createSnapshot; S.redirectTo(url, () => localSnapshot.restore)})}</form> ++
           <form id={cancelId} action={url} method="post">{SHtml.hidden(() => {
             snapshot.restore();
             WizardRules.deregisterWizardSession(CurrentSession.is)
             S.redirectTo(Referer.is)
-          })}</form> % theScreen.additionalAttributes
+          })}</form>
 
     Helpers.bind("wizard", allTemplate,
       "screen_number" -> Text(CurrentScreen.is.map(s => (s.myScreenNum + 1).toString) openOr ""),
@@ -350,7 +353,7 @@ trait Wizard extends DispatchSnippet with Factory {
       _fieldList = _fieldList ::: List(field)
     }
 
-    protected def hasUploadField: Boolean = screenFields.foldLeft(false)(_ && _.uploadField_?)
+    protected def hasUploadField: Boolean = screenFields.foldLeft(false)(_ | _.uploadField_?)
 
     /**
      *  A list of fields in this screen
