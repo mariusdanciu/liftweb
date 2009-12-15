@@ -135,14 +135,7 @@ object Req {
 
 
     // val (uri, path, localSingleParams) = processRewrite(tmpUri, tmpPath, TreeMap.empty)
-    val rewritten = {
-      request.sessionId.flatMap(id => SessionMaster.getSession(id, Empty)) match {
-        case Full(session) => S.initIfUninitted(session) {
-            processRewrite(tmpPath, Map.empty)
-          }
-        case _ => processRewrite(tmpPath, Map.empty)
-      }
-    }
+    val rewritten = processRewrite(tmpPath, Map.empty)
 
     val localParams: Map[String, List[String]] = Map(rewritten.params.toList.map {case (name, value) => name -> List(value)}: _*)
 
@@ -307,13 +300,13 @@ class Req(val path: ParsePath,
 
   def snapshot = {
     val paramCalc = paramCalculator()
-    new Req(path, 
-     contextPath, 
-     requestType, 
-     contentType, 
-     request.snapshot, 
-     nanoStart, 
-     nanoEnd, 
+    new Req(path,
+     contextPath,
+     requestType,
+     contentType,
+     request.snapshot,
+     nanoStart,
+     nanoEnd,
      () => paramCalc,
      addlParams)
   }

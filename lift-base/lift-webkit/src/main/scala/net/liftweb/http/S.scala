@@ -1121,8 +1121,12 @@ for {
     }
   }
 
-  private def doStatefulRewrite(old: Req): Req =
-  Req(old,  S.sessionRewriter.map(_.rewrite) ::: LiftRules.statefulRewrite.toList)
+  private def doStatefulRewrite(old: Req): Req = {
+    // Don't even try to rewrite Req.nil
+    if (!old.path.partPath.isEmpty && (old.request ne null))
+      Req(old, S.sessionRewriter.map(_.rewrite) ::: LiftRules.statefulRewrite.toList)
+    else old
+  }
 
   private def _innerInit[B](request: Req, f: () => B): B = {
     _lifeTime.doWith(false) {
