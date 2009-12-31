@@ -232,6 +232,11 @@ object LiftRules extends Factory with FormVendor {
   @volatile var localizationLookupFailureNotice: Box[(String, Locale) => Unit] = Empty
 
   /**
+   * Set to false if you want to have 404's handled the same way in dev and production mode
+   */
+  @volatile var displayHelpfulSiteMapMessages_? = true
+
+  /**
    * The default location to send people if SiteMap access control fails. The path is
    * expressed a a List[String]
    */
@@ -684,25 +689,28 @@ object LiftRules extends Factory with FormVendor {
   /**
    * Obtain the resource InputStream by name
    */
-  def getResourceAsStream(name: String): Box[InputStream] =
-    getResource(name).map(_.openStream)
+  def getResourceAsStream(name: String): Box[Applier[InputStream]] =
+    getResource(name).map(url => wrapInputStream(url.openStream))
 
   /**
    * Obtain the resource as an array of bytes by name
    */
   def loadResource(name: String): Box[Array[Byte]] = getResourceAsStream(name).map {
-    stream =>
-            val buffer = new Array[Byte](2048)
-            val out = new ByteArrayOutputStream
-            def reader {
-              val len = stream.read(buffer)
-              if (len < 0) return
-              else if (len > 0) out.write(buffer, 0, len)
-              reader
-            }
-            reader
-            stream.close
-            out.toByteArray
+    app => app {
+      stream => {
+        val buffer = new Array[Byte](2048)
+        val out = new ByteArrayOutputStream
+        def reader {
+          val len = stream.read(buffer)
+          if (len < 0) return
+          else if (len > 0) out.write(buffer, 0, len)
+          reader
+        }
+        reader
+        // stream.close
+        out.toByteArray
+      }
+    }
   }
 
   /**
@@ -721,11 +729,22 @@ object LiftRules extends Factory with FormVendor {
   /**
    * Looks up a resource by name and returns an Empty Box if the resource was not found.
    */
-  def finder(name: String): Box[InputStream] =
+  def finder(name: String): Box[Applier[InputStream]] =
     (for{
       ctx <- Box !! LiftRules.context
       res <- Box !! ctx.resourceAsStream(name)
-    } yield res) or getResourceAsStream(name)
+    } yield wrapInputStream(res)) or getResourceAsStream(name)
+
+
+  private def wrapInputStream(is: InputStream): Applier[InputStream] =
+  new Applier[InputStream] {
+    def apply[T](f: InputStream => T): T =
+    try {
+      f(is)
+    } finally {
+      is.close
+    }
+  }
 
   /**
    * Get the partial function that defines if a request should be handled by

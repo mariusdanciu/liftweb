@@ -529,7 +529,7 @@ class LiftSession(val _contextPath: String, val uniqueId: String,
 
             case Right(Full(resp)) => Full(resp)
             case _ if (LiftRules.passNotFoundToChain) => Empty
-            case _ if Props.mode == Props.RunModes.Development =>
+            case _ if Props.mode == Props.RunModes.Development && LiftRules.displayHelpfulSiteMapMessages_? =>
               Full(ForbiddenResponse("The requested page was not defined in your SiteMap, so access was blocked.  (This message is displayed in development mode only)"))
             case _ => Full(request.createNotFound)
           })
@@ -551,6 +551,12 @@ class LiftSession(val _contextPath: String, val uniqueId: String,
     ret
   }
 
+  /**
+   * Merge all the head elements into the main head element and move tail stuff to the end of the
+   * page.
+   */
+  def performHeadMerge(in: NodeSeq, req: Req): Node = merge(in, req)
+
   private def cleanUpBeforeRender {
     // Reset the mapping between ID and Style for Ajax notices.
     MsgErrorMeta(new HashMap)
@@ -565,7 +571,7 @@ class LiftSession(val _contextPath: String, val uniqueId: String,
   }
 
   /**
-   * Set a session-local variable to a value
+   *  Set a session-local variable to a value
    *
    * @param name -- the name of the variable
    * @param value -- the value of the variable
@@ -782,7 +788,7 @@ class LiftSession(val _contextPath: String, val uniqueId: String,
         )
 
       override def apply(in: FileParamHolder): Any =
-        requestVarFunc(() => 
+        requestVarFunc(() =>
           S.CurrentLocation.doWith(curLoc) {
             snippetMap.doWith(snippetMap.is ++ currentMap) {
               super.apply(in)
@@ -1147,9 +1153,9 @@ class LiftSession(val _contextPath: String, val uniqueId: String,
     }
   }
 
-  private def findCometByType(contType: String, 
-                              name: Box[String], 
-                              defaultXml: NodeSeq, 
+  private def findCometByType(contType: String,
+                              name: Box[String],
+                              defaultXml: NodeSeq,
                               attributes: Map[String, String]): Box[LiftCometActor] = {
     findType[LiftCometActor](contType, LiftRules.buildPackage("comet") ::: ("lift.app.comet" :: Nil)).flatMap {
       cls =>
@@ -1308,11 +1314,12 @@ object TemplateFinder {
               while (!found && le.hasNext) {
                 val p = le.next
                 val name = pls + p + (if (s.length > 0) "." + s else "")
-                val rb = LiftRules.finder(name)
+                val rb:Box[Applier[InputStream]] = LiftRules.finder(name)
                 if (rb.isDefined) {
                   import scala.xml.dtd.ValidationException
                   val xmlb = try {
-                    PCDataXmlParser(rb.open_!)
+                    val f = rb.open_!
+                    f(is => PCDataXmlParser(is))
                   } catch {
                     case e: ValidationException if Props.devMode =>
                       return (Full(
