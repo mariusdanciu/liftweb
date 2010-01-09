@@ -22,26 +22,26 @@ package net.liftweb {
     import javax.crypto.SecretKey
     import javax.crypto.spec.SecretKeySpec
     import net.liftweb.http._
-     import net.liftweb.common._
+    import net.liftweb.common._
     import net.liftweb.util.Helpers
 
     abstract class OAuthSignatureMethod(accessor: OAuthAccessor) {
       def validate(message: OAuthMessage): Box[OAuthMessage] =
       for {
         signature <- message.getSignature
-        val baseString = getBaseString(message)
-        if (!isValid(signature, baseString)) {
-          val params = ("oauth_signature", signature) ::
+        sigMethod <- message.getSignatureMethod
+        baseString = getBaseString(message)
+        bs2 <- Full(baseString).filter(bs => isValid(signature.value, bs)) ?~
+        OAuthUtil.Problems.SIGNATURE_INVALID._1 ~>
+        OAuthProblem(OAuthUtil.Problems.SIGNATURE_INVALID, ("oauth_signature", signature.value) ::
           ("oauth_signature_base_string", baseString) ::
-          ("oauth_signature_method", message.getSignatureMethod.get) :: Nil
-          throw OAuthProblemException(OAuthUtil.Problems.SIGNATURE_INVALID, params)
-        }
+          ("oauth_signature_method", sigMethod.value) :: Nil)
       } yield message
   
-      def getBaseString(message: OAuthMessage) = 
-        OAuthUtil.percentEncode(message.method.method ) + "&" +
-        OAuthUtil.percentEncode(normalizeUrl(message.uri)) + "&" +
-        OAuthUtil.percentEncode(normalizeParameters(message.parameters))
+      def getBaseString(message: OAuthMessage): String =
+      OAuthUtil.percentEncode(message.method.method ) + "&" +
+      OAuthUtil.percentEncode(normalizeUrl(message.uri)) + "&" +
+      OAuthUtil.percentEncode(normalizeParameters(message.parameters))
       
   
       private def normalizeUrl(url: String) = {
@@ -74,11 +74,11 @@ package net.liftweb {
         OAuthUtil.formEncode(sortedParameters)
       }
   
-      def getConsumerSecret = accessor.consumerSecret
-      def getTokenSecret = accessor.tokenSecret
+      def getConsumerSecret: String = accessor.consumerSecret
+      def getTokenSecret: Box[String] = accessor.tokenSecret
   
       def isValid(signature: String, baseString: String): Boolean
-      def getSignature(baseString: String): String
+      def getSignature(baseString: String): Box[String]
     }
 
     object OAuthSignatureMethod {
@@ -110,9 +110,15 @@ package net.liftweb {
       override def isValid(signature: String, baseString: String) = {
         getSignature(baseString) == signature
       }
-      override def getSignature(baseString: String) = Helpers.base64Encode(computeSignature(baseString))
-      def computeSignature(baseString: String): Array[Byte] = {
-        val keyString = OAuthUtil.percentEncode(getConsumerSecret) + '&' + OAuthUtil.percentEncode(getTokenSecret)
+      override def getSignature(baseString: String) = for {
+        cs <- computeSignature(baseString)
+      } yield Helpers.base64Encode(cs)
+      
+      def computeSignature(baseString: String): Box[Array[Byte]] =
+      for {
+        ts <- getTokenSecret
+      }   yield {
+        val keyString = OAuthUtil.percentEncode(getConsumerSecret) + '&' + OAuthUtil.percentEncode(ts)
         val keyBytes = keyString.getBytes(ENCODING)
         val key = new SecretKeySpec(keyBytes, MAC_NAME)
         val mac = Mac.getInstance(MAC_NAME)
@@ -132,7 +138,10 @@ package net.liftweb {
 
     class PLAINTEXT(accessor: OAuthAccessor) extends OAuthSignatureMethod(accessor) {
       override def isValid(signature: String, baseString: String) = (getSignature(baseString) == signature)
-      override def getSignature(baseString: String) = OAuthUtil.percentEncode(getConsumerSecret) + '&' + OAuthUtil.percentEncode(getTokenSecret)
+      override def getSignature(baseString: String): Box[String] =
+      for {
+        ts <- getTokenSecret
+      } yield OAuthUtil.percentEncode(getConsumerSecret) + '&' + OAuthUtil.percentEncode(ts)
     }
 
     object PLAINTEXT extends OAuthSignatureMethodBuilder {

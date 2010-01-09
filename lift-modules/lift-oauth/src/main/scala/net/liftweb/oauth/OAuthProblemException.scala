@@ -30,20 +30,5 @@ package net.liftweb {
       def apply(problem: (String, Int), param: (String, String)) = new OAuthProblem(problem, param :: Nil)
       def apply(problem: (String, Int), params: List[(String, String)]) = new OAuthProblem(problem, params)
     }
-
-    /*
-     class OAuthProblemException(problem: (String, Int), params: List[(String, String)]) extends Exception {
-     def httpCode = problem._2
-     override def toString = {
-     problem._1.toUpperCase + (if (params.isEmpty) "" else " ("+params.map(p => p._1+": "+p._2).mkString(", ")+")")
-     }
-     }
-
-     object OAuthProblemException {
-     def apply(problem: (String, Int)) = new OAuthProblemException(problem, Nil)
-     def apply(problem: (String, Int), param: (String, String)) = new OAuthProblemException(problem, param :: Nil)
-     def apply(problem: (String, Int), params: List[(String, String)]) = new OAuthProblemException(problem, params)
-     }
-     */
   }
 }

@@ -32,33 +32,6 @@ package net.liftweb {
       def getToken = getParameter(OAuthUtil.OAUTH_TOKEN)
       def getSignatureMethod = getParameter(OAuthUtil.OAUTH_SIGNATURE_METHOD)
       def getSignature = getParameter(OAuthUtil.OAUTH_SIGNATURE)
-
-      private lazy val parameterNames: List[String] = parameters.map(_.name)
-
-      /*
-       def requireParameters(names: String*): Box[Unit] = {
-       (names.toList -- parameterNames) match {
-       case Nil => Full(())
-       case absent =>
-       val param = OAuthUtil.ProblemParams.OAUTH_PARAMETERS_ABSENT -> OAuthUtil.percentEncode(absent)
-       ParamFailure(OAuthUtil.Problems.PARAMETER_ABSENT._1, Empty, Empty, OAuthProblem(OAuthUtil.Problems.PARAMETER_ABSENT, param))
-       }
-       /*
-        var absent: List[String] = Nil
-        for (name <- names) {
-        parameters.find(_.name == name) match {
-        case None => absent = name :: absent
-        case _ => ()
-        }
-        }
-        if (!absent.isEmpty) {
-        val param = (OAuthUtil.ProblemParams.OAUTH_PARAMETERS_ABSENT, OAuthUtil.percentEncode(absent))
-        throw OAuthProblemException(OAuthUtil.Problems.PARAMETER_ABSENT, param)
-        }
-        */
-       
-       }
-       */
     }
 
     object OAuthMessage {
@@ -66,23 +39,15 @@ package net.liftweb {
       val AUTHORIZATION = Pattern.compile("\\s*(\\w*)\\s+(.*)")
       val NVP = Pattern.compile("(\\S*)\\s*\\=\\s*\"([^\"]*)\"")
   
-      def decodeAuthorization(authorization: String) = {
-        var result: List[OAuthUtil.Parameter] = Nil
-        if (authorization != null) {
-          val matcher = AUTHORIZATION.matcher(authorization);
-          if (matcher.matches() && AUTH_SCHEME.equalsIgnoreCase(matcher.group(1))) {
-            for (nvp <- matcher.group(2).split("\\s*,\\s*")) {
-              val matcher = NVP.matcher(nvp);
-              if (matcher.matches()) {
-                val name = OAuthUtil.decodePercent(matcher.group(1))
-                val value = OAuthUtil.decodePercent(matcher.group(2))
-                result = new OAuthUtil.Parameter(name, value) :: result
-              }
-            }
-          }
-        }
-        result
-      }
+      def decodeAuthorization(authorization: String): List[OAuthUtil.Parameter] =
+      for {
+        auth <- (Box !! authorization).toList
+        matcher <- List(AUTHORIZATION.matcher(authorization)) if (matcher.matches() &&
+                                                                  AUTH_SCHEME.equalsIgnoreCase(matcher.group(1)))
+        nvp <- matcher.group(2).split("\\s*,\\s*")
+        m2 <- List(NVP.matcher(nvp)) if m2.matches()
+      } yield new OAuthUtil.Parameter(OAuthUtil.decodePercent(m2.group(1)),
+                                      OAuthUtil.decodePercent(m2.group(2)))
     }
 
     class HttpRequestMessage(req: Req) extends OAuthMessage(req.requestType,
@@ -94,23 +59,21 @@ package net.liftweb {
         val request = req.request
         request.scheme+"://"+request.serverName+":"+request.serverPort+request.uri
       }
+
   
-      def getParameters(req: Req) = {
-        var result: List[OAuthUtil.Parameter] = Nil
-        for (header <- req.headers("Authorization")) {
-          for (parameter <- OAuthMessage.decodeAuthorization(header)) {
-            if (!"realm".equalsIgnoreCase(parameter.name)) {
-              result = parameter :: result
-            }
-          }
-        }
-        for (entry <- req.params) {
-          val name = entry._1
-          for (value <- entry._2) {
-            result = new OAuthUtil.Parameter(name, value) :: result
-          }
-        }
-        result
+      def getParameters(req: Req): List[OAuthUtil.Parameter] = {
+        (for {
+            header <- req.headers("Authorization").toList
+            parameter <- OAuthMessage.decodeAuthorization(header) if !"realm".equalsIgnoreCase(parameter.name)
+          } yield parameter) :::
+        (for {
+            entry <- req.params.toList
+            name = entry._1
+            value <- entry._2
+          } yield {
+            new OAuthUtil.Parameter(name, value)
+          })
+
       }
     }
   }

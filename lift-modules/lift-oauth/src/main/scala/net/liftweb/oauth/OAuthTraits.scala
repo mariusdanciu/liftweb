@@ -38,19 +38,19 @@ package net.liftweb {
   
     }
 
-trait OAuthUserMeta {
-  def findByUsernameAndPassword(username: String, password: String): Box[OAuthUser]
-}
+    trait OAuthUserMeta {
+      def findByUsernameAndPassword(username: String, password: String): Box[OAuthUser]
+    }
 
     trait OAuthTokenMeta {
       def find(token: OAuthUtil.Parameter): Box[OAuthToken]
       def create(consumer: OAuthConsumer, user: Box[OAuthUser],
-        tokenType: String, authorized: Int, ttl: Date): OAuthToken
+                 tokenType: String, authorized: Int, ttl: Date): OAuthToken
 
-   def create(consumer: OAuthConsumer, user: OAuthUser,
-        tokenType: String): OAuthToken
+      def create(consumer: OAuthConsumer, user: OAuthUser,
+                 tokenType: String): OAuthToken
 
-  def bulkDelete_!!(token: Box[OAuthUtil.Parameter]): Unit
+      def bulkDelete_!!(token: Box[OAuthUtil.Parameter]): Unit
     }
 
     trait OAuthConsumer {
